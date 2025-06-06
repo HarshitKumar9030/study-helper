@@ -1,9 +1,16 @@
 import mongoose from 'mongoose';
 
-let cached = global.mongoose;
+declare global {
+  let mongoose: {
+    conn: typeof mongoose | null;
+    promise: Promise<typeof mongoose> | null;
+  };
+}
+
+let cached = (globalThis as any).mongoose;
 
 if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
+  cached = (globalThis as any).mongoose = { conn: null, promise: null };
 }
 
 
