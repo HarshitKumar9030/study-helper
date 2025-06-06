@@ -1,18 +1,18 @@
-"use client"
+"use client";
 
-import React, { useState } from 'react'
-import Link from 'next/link'
-import { useSession, signIn, signOut } from 'next-auth/react'
-import { useTheme } from 'next-themes'
-import { Button } from '@/components/ui/button'
+import React, { useState } from "react";
+import Link from "next/link";
+import { useSession, signIn, signOut } from "next-auth/react";
+import { useTheme } from "next-themes";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -20,54 +20,50 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
-} from '@/components/ui/navigation-menu'
+} from "@/components/ui/navigation-menu";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from '@/components/ui/sheet'
-import { 
-  Moon, 
-  Sun, 
-  User, 
-  LogOut, 
-  Settings, 
-  BookOpen, 
-  Calendar, 
-  Focus, 
+  Moon,
+  Sun,
+  User,
+  LogOut,
+  Settings,
+  BookOpen,
+  Calendar,
+  Focus,
   MessageCircle,
   Mic,
   Home,
   BarChart3,
   Menu,
-  X
-} from 'lucide-react'
+  X,
+} from "lucide-react";
 
 const Navbar = () => {
-  const { data: session, status } = useSession()
-  const { theme, setTheme } = useTheme()
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { data: session, status } = useSession();
+  const { theme, setTheme } = useTheme();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const toggleTheme = () => {
-    setTheme(theme === 'dark' ? 'light' : 'dark')
-  }
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
 
   const getUserInitials = (name: string) => {
     return name
-      .split(' ')
-      .map(word => word[0])
-      .join('')
+      .split(" ")
+      .map((word) => word[0])
+      .join("")
       .toUpperCase()
-      .slice(0, 2)
-  }
+      .slice(0, 2);
+  };
 
   const navigationItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
     { href: "/calendar", label: "Calendar", icon: Calendar },
     { href: "/analytics", label: "Analytics", icon: BarChart3 },
-  ]
+  ];
 
-  const closeMobileMenu = () => setMobileMenuOpen(false)
+  const closeMobileMenu = () => setMobileMenuOpen(false);
   return (
     <nav className="sticky px-2 top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300">
       <div className="container flex h-16 items-center justify-between">
@@ -86,7 +82,7 @@ const Navbar = () => {
           <NavigationMenu className="hidden md:flex">
             <NavigationMenuList>
               {navigationItems.map((item) => {
-                const IconComponent = item.icon
+                const IconComponent = item.icon;
                 return (
                   <NavigationMenuItem key={item.href}>
                     <Link href={item.href} legacyBehavior passHref>
@@ -96,7 +92,7 @@ const Navbar = () => {
                       </NavigationMenuLink>
                     </Link>
                   </NavigationMenuItem>
-                )
+                );
               })}
             </NavigationMenuList>
           </NavigationMenu>
@@ -133,7 +129,7 @@ const Navbar = () => {
                   <div className="flex-1 p-6">
                     <div className="space-y-2">
                       {navigationItems.map((item) => {
-                        const IconComponent = item.icon
+                        const IconComponent = item.icon;
                         return (
                           <Link
                             key={item.href}
@@ -146,7 +142,7 @@ const Navbar = () => {
                             </div>
                             <span className="font-medium">{item.label}</span>
                           </Link>
-                        )
+                        );
                       })}
                     </div>
                   </div>
@@ -155,13 +151,15 @@ const Navbar = () => {
                   <div className="p-6 border-t">
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
-                        <AvatarImage 
-                          src={session.user?.image || ''} 
-                          alt={session.user?.name || ''} 
+                        <AvatarImage
+                          src={session.user?.image || ""}
+                          alt={session.user?.name || ""}
                           className="object-cover"
                         />
                         <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-600 text-white font-semibold text-sm">
-                          {session.user?.name ? getUserInitials(session.user.name) : 'U'}
+                          {session.user?.name
+                            ? getUserInitials(session.user.name)
+                            : "U"}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col min-w-0 flex-1">
@@ -182,7 +180,6 @@ const Navbar = () => {
               </SheetContent>
             </Sheet>
           )}
-
           <Button
             variant="ghost"
             size="icon"
@@ -192,44 +189,49 @@ const Navbar = () => {
             <Sun className="h-4 w-4 rotate-0 scale-100 transition-all duration-300 dark:-rotate-90 dark:scale-0" />
             <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all duration-300 dark:rotate-0 dark:scale-100" />
             <span className="sr-only">Toggle theme</span>
-          </Button>          {/* Profile Dropdown / Auth Buttons */}
-          {status === 'loading' ? (
+          </Button>{" "}
+          {/* Profile Dropdown / Auth Buttons */}
+          {status === "loading" ? (
             <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
           ) : session ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   className="relative h-10 w-10 rounded-full ring-offset-background transition-all duration-300 hover:ring-2 hover:ring-ring hover:ring-offset-2 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Avatar className="h-9 w-9 border-2 border-background shadow-md transition-all duration-300 hover:shadow-lg">
-                    <AvatarImage 
-                      src={session.user?.image || ''} 
-                      alt={session.user?.name || ''} 
+                    <AvatarImage
+                      src={session.user?.image || ""}
+                      alt={session.user?.name || ""}
                       className="object-cover"
                     />
                     <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-600 text-white font-semibold text-sm">
-                      {session.user?.name ? getUserInitials(session.user.name) : 'U'}
+                      {session.user?.name
+                        ? getUserInitials(session.user.name)
+                        : "U"}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                className="w-64 p-2 bg-card/95 backdrop-blur-md border shadow-lg animate-in slide-in-from-top-2 duration-300" 
-                align="end" 
+              <DropdownMenuContent
+                className="w-64 p-2 bg-card/95 backdrop-blur-md border shadow-lg animate-in slide-in-from-top-2 duration-300"
+                align="end"
                 forceMount
                 sideOffset={8}
               >
                 {/* User Info Header */}
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border border-purple-100 dark:border-purple-800/30 transition-all duration-300 hover:shadow-sm">
                   <Avatar className="h-12 w-12 border-2 border-white dark:border-gray-800 shadow-sm">
-                    <AvatarImage 
-                      src={session.user?.image || ''} 
-                      alt={session.user?.name || ''} 
+                    <AvatarImage
+                      src={session.user?.image || ""}
+                      alt={session.user?.name || ""}
                       className="object-cover"
                     />
                     <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-600 text-white font-semibold">
-                      {session.user?.name ? getUserInitials(session.user.name) : 'U'}
+                      {session.user?.name
+                        ? getUserInitials(session.user.name)
+                        : "U"}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col space-y-1 min-w-0 flex-1">
@@ -245,17 +247,19 @@ const Navbar = () => {
                     )}
                     <div className="flex items-center gap-1">
                       <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
-                      <span className="text-xs text-green-600 dark:text-green-400 font-medium">Online</span>
+                      <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                        Online
+                      </span>
                     </div>
                   </div>
                 </div>
-                
+
                 <DropdownMenuSeparator className="my-2" />
-                
+
                 <div className="space-y-1">
                   <DropdownMenuItem asChild>
-                    <Link 
-                      href="/profile" 
+                    <Link
+                      href="/profile"
                       className="flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-200 hover:bg-accent/50 focus:bg-accent/50  cursor-pointer group"
                     >
                       <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 transition-all duration-200 group-hover:bg-blue-200 dark:group-hover:bg-blue-800/40">
@@ -263,14 +267,16 @@ const Navbar = () => {
                       </div>
                       <div className="flex flex-col">
                         <span className="font-medium text-sm">Profile</span>
-                        <span className="text-xs text-muted-foreground">Manage your account</span>
+                        <span className="text-xs text-muted-foreground">
+                          Manage your account
+                        </span>
                       </div>
                     </Link>
                   </DropdownMenuItem>
-                  
+
                   <DropdownMenuItem asChild>
-                    <Link 
-                      href="/settings" 
+                    <Link
+                      href="/settings"
                       className="flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-200 hover:bg-accent/50 focus:bg-accent/50  cursor-pointer group"
                     >
                       <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 transition-all duration-200 group-hover:bg-gray-200 dark:group-hover:bg-gray-700">
@@ -278,14 +284,16 @@ const Navbar = () => {
                       </div>
                       <div className="flex flex-col">
                         <span className="font-medium text-sm">Settings</span>
-                        <span className="text-xs text-muted-foreground">Preferences & privacy</span>
+                        <span className="text-xs text-muted-foreground">
+                          Preferences & privacy
+                        </span>
                       </div>
                     </Link>
                   </DropdownMenuItem>
                 </div>
-                
+
                 <DropdownMenuSeparator className="my-2" />
-                
+
                 {/* Sign Out */}
                 <DropdownMenuItem
                   className="flex items-center gap-3 px-3 py-2.5 rounded-md text-red-600 focus:text-red-600 hover:bg-red-50 focus:bg-red-50 dark:hover:bg-red-950/20 dark:focus:bg-red-950/20 cursor-pointer transition-all duration-200  group"
@@ -296,21 +304,23 @@ const Navbar = () => {
                   </div>
                   <div className="flex flex-col">
                     <span className="font-medium text-sm">Sign out</span>
-                    <span className="text-xs text-red-500/70">End your session</span>
+                    <span className="text-xs text-red-500/70">
+                      End your session
+                    </span>
                   </div>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
             <div className="flex items-center space-x-2">
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 onClick={() => signIn()}
                 className="transition-all duration-200  hidden sm:inline-flex"
               >
                 Sign In
               </Button>
-              <Button 
+              <Button
                 onClick={() => signIn()}
                 className="transition-all duration-200  bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
               >
@@ -322,7 +332,7 @@ const Navbar = () => {
         </div>
       </div>
     </nav>
-  )
-}
+  );
+};
 
-export default Navbar
+export default Navbar;
