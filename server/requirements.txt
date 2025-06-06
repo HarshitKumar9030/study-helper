@@ -1,0 +1,35 @@
+# Voice Recognition & Text-to-Speech
+SpeechRecognition==3.10.0
+pyttsx3==2.90
+pyaudio==0.2.11
+
+# Database & API
+pymongo==4.6.1
+python-dotenv==1.0.0
+requests==2.31.0
+
+# JWT Authentication
+PyJWT==2.8.0
+cryptography==41.0.7
+
+# GUI Framework (for system tray and UI)
+customtkinter==5.2.0
+pillow==10.1.0
+pystray==0.19.4
+
+# System Integration
+psutil==5.9.6
+plyer==2.1.0
+
+# Web Blocking
+hostsman==1.0.6
+
+# Scheduling & Time
+schedule==1.2.0
+python-dateutil==2.8.2
+
+# Logging
+colorlog==6.8.0
+
+# Building executable
+pyinstaller==6.2.0

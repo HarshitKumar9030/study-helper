@@ -177,7 +177,7 @@ export default function Dashboard() {
             <div className="flex items-center justify-between p-4 border rounded-lg">
               <div>
                 <h4 className="font-medium">Physics - Mechanics</h4>
-                <p className="text-sm text-muted-foreground">Newton's Laws Review</p>
+                <p className="text-sm text-muted-foreground">Newton&apos;s Laws Review</p>
               </div>
               <div className="text-right">
                 <p className="text-sm font-medium">2:00 PM - 3:00 PM</p>
