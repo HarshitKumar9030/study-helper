@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
@@ -38,23 +38,58 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import { getAvatarUrl, getUserInitials } from "@/lib/avatar-utils";
+
+interface UserProfile {
+  avatar?: {
+    url: string;
+    publicId: string;
+  };
+}
 
 const Navbar = () => {
   const { data: session, status } = useSession();
   const { theme, setTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
   };
+  // Fetch user profile data to get avatar
+  useEffect(() => {
+    if (session) {
+      fetch('/api/profile')
+        .then(res => res.json())
+        .then(data => {
+          if (data.user) {
+            setUserProfile(data.user);
+          }
+        })
+        .catch(console.error);
+    }
+  }, [session]);
 
-  const getUserInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((word) => word[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
+  // Listen for avatar updates via custom event
+  useEffect(() => {
+    const handleAvatarUpdate = () => {
+      if (session) {
+        fetch('/api/profile')
+          .then(res => res.json())
+          .then(data => {
+            if (data.user) {
+              setUserProfile(data.user);
+            }
+          })
+          .catch(console.error);
+      }
+    };
+
+    window.addEventListener('avatarUpdated', handleAvatarUpdate);
+    return () => window.removeEventListener('avatarUpdated', handleAvatarUpdate);
+  }, [session]);
+  const getAvatarUrlForUser = () => {
+    return getAvatarUrl(userProfile?.avatar, session?.user?.image || "");
   };
 
   const navigationItems = [
@@ -149,10 +184,9 @@ const Navbar = () => {
 
                   {/* Mobile Menu Footer */}
                   <div className="p-6 border-t">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
+                    <div className="flex items-center gap-3">                      <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
                         <AvatarImage
-                          src={session.user?.image || ""}
+                          src={getAvatarUrlForUser()}
                           alt={session.user?.name || ""}
                           className="object-cover"
                         />
@@ -199,10 +233,9 @@ const Navbar = () => {
                 <Button
                   variant="ghost"
                   className="relative h-10 w-10 rounded-full ring-offset-background transition-all duration-300 hover:ring-2 hover:ring-ring hover:ring-offset-2 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  <Avatar className="h-9 w-9 border-2 border-background shadow-md transition-all duration-300 hover:shadow-lg">
+                >                  <Avatar className="h-9 w-9 border-2 border-background shadow-md transition-all duration-300 hover:shadow-lg">
                     <AvatarImage
-                      src={session.user?.image || ""}
+                      src={getAvatarUrlForUser()}
                       alt={session.user?.name || ""}
                       className="object-cover"
                     />
@@ -221,10 +254,9 @@ const Navbar = () => {
                 sideOffset={8}
               >
                 {/* User Info Header */}
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border border-purple-100 dark:border-purple-800/30 transition-all duration-300 hover:shadow-sm">
-                  <Avatar className="h-12 w-12 border-2 border-white dark:border-gray-800 shadow-sm">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border border-purple-100 dark:border-purple-800/30 transition-all duration-300 hover:shadow-sm">                  <Avatar className="h-12 w-12 border-2 border-white dark:border-gray-800 shadow-sm">
                     <AvatarImage
-                      src={session.user?.image || ""}
+                      src={getAvatarUrlForUser()}
                       alt={session.user?.name || ""}
                       className="object-cover"
                     />
@@ -245,12 +277,6 @@ const Navbar = () => {
                         {session.user.email}
                       </p>
                     )}
-                    <div className="flex items-center gap-1">
-                      <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
-                      <span className="text-xs text-green-600 dark:text-green-400 font-medium">
-                        Online
-                      </span>
-                    </div>
                   </div>
                 </div>
 

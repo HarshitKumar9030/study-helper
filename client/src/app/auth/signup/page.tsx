@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +11,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { BookOpen } from "lucide-react";
 
 export default function SignUp() {
+  const { data: session, status } = useSession();
   const router = useRouter();
+  
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace("/dashboard");
+    }
+  }, [status, router]);
   
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -24,7 +32,6 @@ export default function SignUp() {
     setIsLoading(true);
     setError("");
 
-    // Password validation
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       setIsLoading(false);
@@ -56,7 +63,6 @@ export default function SignUp() {
         throw new Error(data.message || "Something went wrong");
       }
 
-      // Redirect to sign-in page
       router.push("/auth/signin?registered=true");
     } catch (error) {
       setError(error instanceof Error ? error.message : "Failed to register");

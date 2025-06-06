@@ -8,6 +8,11 @@ export interface IUser extends Document {
   role: string;
   emailVerified?: Date;
   image?: string;
+  avatar?: {
+    url: string;
+    publicId: string;
+  };
+  bio?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -50,9 +55,20 @@ const UserSchema = new Schema<IUser>(
     },
     emailVerified: {
       type: Date,
-    },
-    image: {
+    },    image: {
       type: String,
+    },
+    avatar: {
+      url: {
+        type: String,
+      },
+      publicId: {
+        type: String,
+      },
+    },
+    bio: {
+      type: String,
+      maxlength: [500, 'Bio cannot exceed 500 characters'],
     },
   },
   {
@@ -60,11 +76,5 @@ const UserSchema = new Schema<IUser>(
   }
 );
 
-/**
- * User Model - Mongoose model
- * 
- * This exports the User model if it exists, or creates it if it doesn't.
- * This pattern prevents duplicate model errors in development.
- */
 export const UserModel: Model<IUser> = 
   mongoose.models.User || mongoose.model<IUser>('User', UserSchema);

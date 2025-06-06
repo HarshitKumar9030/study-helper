@@ -22,7 +22,7 @@ const publicPaths = [
   '/auth/signup',
   '/auth/forgot-password',
   '/auth/error',
-  '/api/auth/register',
+  '/api/auth',
 ];
 
 
@@ -32,6 +32,8 @@ const apiPaths = [
   '/api/focus',
   '/api/chat',
   '/api/voice',
+  '/api/profile',
+  '/api/upload',
 ];
 
 

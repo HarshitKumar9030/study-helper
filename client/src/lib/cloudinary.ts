@@ -1,7 +1,3 @@
-// Client-side Cloudinary utilities (no server imports)
-
-// Client-side Cloudinary utilities (no server imports)
-
 export interface CloudinaryUploadResult {
   public_id: string;
   version: number;
@@ -22,7 +18,7 @@ export interface CloudinaryUploadResult {
   original_filename: string;
 }
 
-export const uploadToCloudinary = async (
+export const uploadToCloudinaryClient = async (
   file: File,
   folder: string = 'study-helper/avatars'
 ): Promise<CloudinaryUploadResult> => {
@@ -55,7 +51,6 @@ export const getOptimizedImageUrl = (
   return `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/${transformations}/${publicId}`;
 };
 
-// Client-side delete function that calls our API route
 export const deleteFromCloudinary = async (publicId: string): Promise<void> => {
   const response = await fetch('/api/cloudinary/delete', {
     method: 'POST',
