@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { signIn, useSession } from "next-auth/react";
+import React, { useState } from "react";
+import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,17 +12,9 @@ import { BookOpen } from "lucide-react";
 
 
 export default function SignIn() {
-  const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
-  
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (status === "authenticated") {
-      router.replace(callbackUrl);
-    }
-  }, [status, callbackUrl, router]);
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

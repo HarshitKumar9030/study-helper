@@ -33,7 +33,7 @@ import {
   Trash2,
   ArrowLeft
 } from 'lucide-react';
-import { getAvatarUrl, getUserInitials, notifyAvatarUpdate } from '@/lib/avatar-utils';
+import { getOptimizedImageUrl } from '@/lib/cloudinary';
 
 interface UserProfile {
   id: string;
@@ -60,6 +60,7 @@ const ProfilePage = () => {
   const [isSaving, setSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+
   const [formData, setFormData] = useState({
     name: '',
     bio: '',
@@ -67,6 +68,15 @@ const ProfilePage = () => {
     newPassword: '',
     confirmPassword: '',
   });
+
+  const getUserInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
 
   useEffect(() => {
     if (!session) {
@@ -176,14 +186,15 @@ const ProfilePage = () => {
         body: formData,
       });
 
-      const data = await response.json();      if (response.ok) {
-        setUser(prev => prev ? { ...prev, avatar: data.avatar } : null);        toast({
+      const data = await response.json();
+
+      if (response.ok) {
+        setUser(prev => prev ? { ...prev, avatar: data.avatar } : null);
+        toast({
           title: 'Success',
           description: 'Avatar updated successfully',
         });
         await updateSession();
-        // Dispatch event to update navbar avatar
-        notifyAvatarUpdate();
       } else {
         toast({
           title: 'Error',
@@ -206,14 +217,15 @@ const ProfilePage = () => {
     try {
       const response = await fetch('/api/upload/avatar', {
         method: 'DELETE',
-      });      if (response.ok) {
-        setUser(prev => prev ? { ...prev, avatar: undefined } : null);        toast({
+      });
+
+      if (response.ok) {
+        setUser(prev => prev ? { ...prev, avatar: undefined } : null);
+        toast({
           title: 'Success',
           description: 'Avatar deleted successfully',
         });
         await updateSession();
-        // Dispatch event to update navbar avatar
-        notifyAvatarUpdate();
       } else {
         toast({
           title: 'Error',
@@ -283,8 +295,10 @@ const ProfilePage = () => {
           {/* Avatar Section */}
           <Card className="lg:col-span-1 border-border">
             <CardHeader className="text-center">
-              <div className="relative mx-auto">                <Avatar className="h-32 w-32 border-4 border-border shadow-lg">                  <AvatarImage 
-                    src={getAvatarUrl(user.avatar)} 
+              <div className="relative mx-auto">
+                <Avatar className="h-32 w-32 border-4 border-border shadow-lg">
+                  <AvatarImage 
+                    src={user.avatar ? getOptimizedImageUrl(user.avatar.publicId, 'w_200,h_200,c_fill,f_auto,q_auto') : ''} 
                     alt={user.name}
                     className="object-cover"
                   />
