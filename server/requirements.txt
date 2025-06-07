@@ -1,35 +1,35 @@
+# Core GUI Framework
+PyQt5==5.15.9
+PyQt5-tools==5.15.9.3.3
+
 # Voice Recognition & Text-to-Speech
 SpeechRecognition==3.10.0
 pyttsx3==2.90
-pyaudio==0.2.11
+PyAudio==0.2.11
 
-# Database & API
-pymongo==4.6.1
-python-dotenv==1.0.0
-requests==2.31.0
-
-# JWT Authentication
+# Authentication & Security
 PyJWT==2.8.0
 cryptography==41.0.7
+requests==2.31.0
 
-# GUI Framework (for system tray and UI)
-customtkinter==5.2.0
-pillow==10.1.0
-pystray==0.19.4
+# Database
+pymongo==4.6.0
+motor==3.3.2
+
+# AI/ML for Smart Features
+google-generativeai==0.8.3
+numpy==1.24.3
+pandas==2.0.3
 
 # System Integration
 psutil==5.9.6
 plyer==2.1.0
+keyboard==0.13.5
 
-# Web Blocking
-hostsman==1.0.6
-
-# Scheduling & Time
+# Development & Utilities
+python-dotenv==1.0.0
+colorlog==6.7.0
 schedule==1.2.0
-python-dateutil==2.8.2
 
-# Logging
-colorlog==6.8.0
-
-# Building executable
-pyinstaller==6.2.0
+# Optional: For better system integration
+pywin32==306; sys_platform == "win32"

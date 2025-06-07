@@ -1,0 +1,234 @@
+2025-06-07 17:24:34 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:24:34 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 17:24:34 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:24:34 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 17:24:34 - __main__ - [31mERROR[0m - Failed to start application: 'Config' object has no attribute 'GUI_MODE'
+2025-06-07 17:24:34 - __main__ - [31mERROR[0m - Traceback: Traceback (most recent call last):
+  File "C:\Users\Harshit\study-helper\server\main.py", line 34, in main
+    logger.info(f"GUI Mode: {config.GUI_MODE}")
+                             ^^^^^^^^^^^^^^^
+AttributeError: 'Config' object has no attribute 'GUI_MODE'
+
+2025-06-07 17:27:04 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:27:04 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 17:27:04 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:27:04 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 17:27:04 - __main__ - [32mINFO[0m - GUI Mode: False
+2025-06-07 17:27:04 - __main__ - [31mERROR[0m - Failed to start application: cannot import name 'StudyHelperApp' from 'core.app' (C:\Users\Harshit\study-helper\server\src\core\app.py)
+2025-06-07 17:27:04 - __main__ - [31mERROR[0m - Traceback: Traceback (most recent call last):
+  File "C:\Users\Harshit\study-helper\server\main.py", line 37, in main
+    from core.app import StudyHelperApp
+ImportError: cannot import name 'StudyHelperApp' from 'core.app' (C:\Users\Harshit\study-helper\server\src\core\app.py)
+
+2025-06-07 17:27:36 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:27:36 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 17:27:36 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:27:36 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 17:27:36 - __main__ - [32mINFO[0m - GUI Mode: False
+2025-06-07 17:27:36 - __main__ - [31mERROR[0m - Failed to start application: cannot import name 'StudyHelperApp' from 'core.app' (C:\Users\Harshit\study-helper\server\src\core\app.py)
+2025-06-07 17:27:36 - __main__ - [31mERROR[0m - Traceback: Traceback (most recent call last):
+  File "C:\Users\Harshit\study-helper\server\main.py", line 37, in main
+    from core.app import StudyHelperApp
+ImportError: cannot import name 'StudyHelperApp' from 'core.app' (C:\Users\Harshit\study-helper\server\src\core\app.py)
+
+2025-06-07 17:29:06 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:29:06 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 17:29:06 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:29:06 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 17:29:06 - __main__ - [32mINFO[0m - GUI Mode: False
+2025-06-07 17:29:06 - core.app - [32mINFO[0m - Study Helper v1.0.0 initialized
+2025-06-07 17:29:06 - core.app - [32mINFO[0m - GUI Mode Available: False
+2025-06-07 17:29:06 - core.app - [32mINFO[0m - Starting console mode...
+2025-06-07 17:29:06 - core.app - [31mERROR[0m - Application error: attempted relative import beyond top-level package
+2025-06-07 17:29:06 - __main__ - [31mERROR[0m - Failed to start application: attempted relative import beyond top-level package
+2025-06-07 17:29:06 - __main__ - [31mERROR[0m - Traceback: Traceback (most recent call last):
+  File "C:\Users\Harshit\study-helper\server\main.py", line 41, in main
+    app.run()
+    ~~~~~~~^^
+  File "C:\Users\Harshit\study-helper\server\src\core\app.py", line 42, in run
+    self._run_console()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Harshit\study-helper\server\src\core\app.py", line 98, in _run_console
+    from features.voice_assistant import VoiceAssistant
+  File "C:\Users\Harshit\study-helper\server\src\features\voice_assistant.py", line 9, in <module>
+    from ..utils.config import Config
+ImportError: attempted relative import beyond top-level package
+
+2025-06-07 17:29:14 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:29:14 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 17:29:14 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:29:14 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 17:29:14 - __main__ - [32mINFO[0m - GUI Mode: False
+2025-06-07 17:29:14 - core.app - [32mINFO[0m - Study Helper v1.0.0 initialized
+2025-06-07 17:29:14 - core.app - [32mINFO[0m - GUI Mode Available: False
+2025-06-07 17:29:14 - core.app - [32mINFO[0m - Starting console mode...
+2025-06-07 17:29:14 - core.app - [31mERROR[0m - Application error: attempted relative import beyond top-level package
+2025-06-07 17:29:14 - __main__ - [31mERROR[0m - Failed to start application: attempted relative import beyond top-level package
+2025-06-07 17:29:14 - __main__ - [31mERROR[0m - Traceback: Traceback (most recent call last):
+  File "C:\Users\Harshit\study-helper\server\main.py", line 41, in main
+    app.run()
+    ~~~~~~~^^
+  File "C:\Users\Harshit\study-helper\server\src\core\app.py", line 42, in run
+    self._run_console()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Harshit\study-helper\server\src\core\app.py", line 98, in _run_console
+    from features.voice_assistant import VoiceAssistant
+  File "C:\Users\Harshit\study-helper\server\src\features\voice_assistant.py", line 9, in <module>
+    from ..utils.config import Config
+ImportError: attempted relative import beyond top-level package
+
+2025-06-07 17:32:52 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:32:52 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 17:32:52 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:32:52 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 17:32:52 - __main__ - [32mINFO[0m - GUI Mode: False
+2025-06-07 17:32:52 - core.app - [32mINFO[0m - Study Helper v1.0.0 initialized
+2025-06-07 17:32:52 - core.app - [32mINFO[0m - GUI Mode Available: False
+2025-06-07 17:32:52 - core.app - [32mINFO[0m - Starting console mode...
+2025-06-07 17:32:52 - core.app - [31mERROR[0m - Application error: No module named 'google'
+2025-06-07 17:32:52 - __main__ - [31mERROR[0m - Failed to start application: No module named 'google'
+2025-06-07 17:32:52 - __main__ - [31mERROR[0m - Traceback: Traceback (most recent call last):
+  File "C:\Users\Harshit\study-helper\server\main.py", line 41, in main
+    app.run()
+    ~~~~~~~^^
+  File "C:\Users\Harshit\study-helper\server\src\core\app.py", line 42, in run
+    self._run_console()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Harshit\study-helper\server\src\core\app.py", line 101, in _run_console
+    from features.chat_assistant import ChatAssistant
+  File "C:\Users\Harshit\study-helper\server\src\features\chat_assistant.py", line 5, in <module>
+    import google.generativeai as genai
+ModuleNotFoundError: No module named 'google'
+
+2025-06-07 17:38:28 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:38:28 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 17:38:28 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:38:28 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 17:38:28 - __main__ - [32mINFO[0m - GUI Mode: True
+2025-06-07 17:38:28 - core.app - [32mINFO[0m - Study Helper v1.0.0 initialized
+2025-06-07 17:38:28 - core.app - [32mINFO[0m - GUI Mode Available: True
+2025-06-07 17:38:29 - core.app - [31mERROR[0m - GUI dependencies not available: attempted relative import beyond top-level package
+2025-06-07 17:38:29 - core.app - [31mERROR[0m - Application error: attempted relative import beyond top-level package
+2025-06-07 17:38:29 - core.app - [32mINFO[0m - Falling back to console mode...
+2025-06-07 17:38:29 - core.app - [32mINFO[0m - Starting console mode...
+2025-06-07 17:38:32 - features.chat_assistant - [33mWARNING[0m - Google AI API key not provided
+2025-06-07 17:38:32 - features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 17:38:35 - features.voice_assistant - [32mINFO[0m - Microphone initialized
+2025-06-07 17:38:36 - features.voice_assistant - [32mINFO[0m - TTS engine initialized
+2025-06-07 17:38:36 - features.voice_assistant - [32mINFO[0m - Voice Assistant initialized
+2025-06-07 17:38:36 - features.focus_mode - [32mINFO[0m - Focus Mode initialized
+2025-06-07 17:38:36 - features.scheduler - [32mINFO[0m - Scheduler initialized
+2025-06-07 17:38:36 - features.chat_assistant - [33mWARNING[0m - Google AI API key not provided
+2025-06-07 17:38:36 - features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 17:38:57 - features.focus_mode - [32mINFO[0m - Starting 1-minute focus session
+2025-06-07 17:38:57 - features.focus_mode - [31mERROR[0m - Permission denied to modify hosts file. Run as administrator.
+2025-06-07 17:39:57 - features.focus_mode - [31mERROR[0m - Error unblocking sites: [Errno 13] Permission denied: 'C:\\Windows\\System32\\drivers\\etc\\hosts'
+2025-06-07 17:39:57 - features.focus_mode - [32mINFO[0m - Focus session ended
+2025-06-07 17:40:16 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:40:16 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 17:40:16 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:40:16 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 17:40:16 - __main__ - [32mINFO[0m - GUI Mode: True
+2025-06-07 17:40:16 - core.app - [32mINFO[0m - Study Helper v1.0.0 initialized
+2025-06-07 17:40:16 - core.app - [32mINFO[0m - GUI Mode Available: True
+2025-06-07 17:40:16 - core.app - [31mERROR[0m - GUI dependencies not available: attempted relative import beyond top-level package
+2025-06-07 17:40:16 - core.app - [31mERROR[0m - Application error: attempted relative import beyond top-level package
+2025-06-07 17:40:16 - core.app - [32mINFO[0m - Falling back to console mode...
+2025-06-07 17:40:16 - core.app - [32mINFO[0m - Starting console mode...
+2025-06-07 17:40:18 - features.chat_assistant - [33mWARNING[0m - Google AI API key not provided
+2025-06-07 17:40:18 - features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 17:40:20 - features.voice_assistant - [32mINFO[0m - Microphone initialized
+2025-06-07 17:40:20 - features.voice_assistant - [32mINFO[0m - TTS engine initialized
+2025-06-07 17:40:20 - features.voice_assistant - [32mINFO[0m - Voice Assistant initialized
+2025-06-07 17:40:20 - features.focus_mode - [32mINFO[0m - Focus Mode initialized
+2025-06-07 17:40:20 - features.scheduler - [32mINFO[0m - Scheduler initialized
+2025-06-07 17:40:20 - features.chat_assistant - [33mWARNING[0m - Google AI API key not provided
+2025-06-07 17:40:20 - features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 17:42:04 - core.app - [32mINFO[0m - Received termination signal. Shutting down...
+2025-06-07 17:42:04 - core.app - [32mINFO[0m - Shutting down Study Helper...
+2025-06-07 17:42:04 - core.app - [32mINFO[0m - Application shutdown complete
+2025-06-07 17:42:06 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:42:06 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 17:42:06 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:42:06 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 17:42:06 - __main__ - [32mINFO[0m - GUI Mode: True
+2025-06-07 17:42:06 - __main__ - [31mERROR[0m - Failed to start application: unindent does not match any outer indentation level (app.py, line 50)
+2025-06-07 17:42:06 - __main__ - [31mERROR[0m - Traceback: Traceback (most recent call last):
+  File "C:\Users\Harshit\study-helper\server\main.py", line 37, in main
+    from core.app import StudyHelperApp
+  File "C:\Users\Harshit\study-helper\server\src\core\app.py", line 50
+    def _run_gui(self):
+                       ^
+IndentationError: unindent does not match any outer indentation level
+
+2025-06-07 17:42:32 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:42:32 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 17:42:32 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:42:32 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 17:42:32 - __main__ - [32mINFO[0m - GUI Mode: True
+2025-06-07 17:42:32 - core.app - [32mINFO[0m - Study Helper v1.0.0 initialized
+2025-06-07 17:42:32 - core.app - [32mINFO[0m - GUI Mode Available: True
+2025-06-07 17:42:34 - src.features.chat_assistant - [33mWARNING[0m - Google AI API key not provided
+2025-06-07 17:42:34 - src.features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 17:42:34 - core.app - [31mERROR[0m - GUI dependencies not available: attempted relative import beyond top-level package
+2025-06-07 17:42:34 - core.app - [31mERROR[0m - Application error: attempted relative import beyond top-level package
+2025-06-07 17:42:34 - core.app - [32mINFO[0m - Falling back to console mode...
+2025-06-07 17:42:34 - core.app - [32mINFO[0m - Starting console mode...
+2025-06-07 17:42:34 - features.chat_assistant - [33mWARNING[0m - Google AI API key not provided
+2025-06-07 17:42:34 - features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 17:42:36 - features.voice_assistant - [32mINFO[0m - Microphone initialized
+2025-06-07 17:42:36 - features.voice_assistant - [32mINFO[0m - TTS engine initialized
+2025-06-07 17:42:36 - features.voice_assistant - [32mINFO[0m - Voice Assistant initialized
+2025-06-07 17:42:36 - features.focus_mode - [32mINFO[0m - Focus Mode initialized
+2025-06-07 17:42:36 - features.scheduler - [32mINFO[0m - Scheduler initialized
+2025-06-07 17:42:36 - features.chat_assistant - [33mWARNING[0m - Google AI API key not provided
+2025-06-07 17:42:36 - features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 17:42:45 - core.app - [32mINFO[0m - Received termination signal. Shutting down...
+2025-06-07 17:42:45 - core.app - [32mINFO[0m - Shutting down Study Helper...
+2025-06-07 17:42:45 - core.app - [32mINFO[0m - Application shutdown complete
+2025-06-07 17:44:05 - core.app - [32mINFO[0m - Received termination signal. Shutting down...
+2025-06-07 17:44:05 - core.app - [32mINFO[0m - Shutting down Study Helper...
+2025-06-07 17:44:05 - core.app - [32mINFO[0m - Application shutdown complete
+2025-06-07 17:48:28 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:48:28 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 17:48:28 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:48:28 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 17:48:28 - __main__ - [32mINFO[0m - GUI Mode: True
+2025-06-07 17:48:28 - core.app - [32mINFO[0m - Study Helper v1.0.0 initialized
+2025-06-07 17:48:28 - core.app - [32mINFO[0m - GUI Mode Available: True
+2025-06-07 17:48:29 - src.features.chat_assistant - [33mWARNING[0m - Google AI API key not provided
+2025-06-07 17:48:29 - src.features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 17:48:29 - core.app - [31mERROR[0m - GUI dependencies not available: cannot import name 'AuthService' from 'src.services.auth_service' (C:\Users\Harshit\study-helper\server\src\services\auth_service.py). Please install PyQt5: pip install PyQt5
+2025-06-07 17:48:29 - core.app - [32mINFO[0m - Falling back to console mode...
+2025-06-07 17:48:29 - core.app - [32mINFO[0m - Starting console mode...
+2025-06-07 17:48:29 - features.chat_assistant - [33mWARNING[0m - Google AI API key not provided
+2025-06-07 17:48:29 - features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 17:48:31 - features.voice_assistant - [32mINFO[0m - Microphone initialized
+2025-06-07 17:48:32 - features.voice_assistant - [32mINFO[0m - TTS engine initialized
+2025-06-07 17:48:32 - features.voice_assistant - [32mINFO[0m - Voice Assistant initialized
+2025-06-07 17:48:32 - features.focus_mode - [32mINFO[0m - Focus Mode initialized
+2025-06-07 17:48:32 - features.scheduler - [32mINFO[0m - Scheduler initialized
+2025-06-07 17:48:32 - features.chat_assistant - [33mWARNING[0m - Google AI API key not provided
+2025-06-07 17:48:32 - features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 17:48:52 - core.app - [32mINFO[0m - Received termination signal. Shutting down...
+2025-06-07 17:48:52 - core.app - [32mINFO[0m - Shutting down Study Helper...
+2025-06-07 17:48:52 - core.app - [32mINFO[0m - Application shutdown complete
+2025-06-07 17:50:03 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:50:03 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 17:50:03 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 17:50:03 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 17:50:03 - __main__ - [32mINFO[0m - GUI Mode: True
+2025-06-07 17:50:03 - core.app - [32mINFO[0m - Study Helper v1.0.0 initialized
+2025-06-07 17:50:03 - core.app - [32mINFO[0m - GUI Mode Available: True
+2025-06-07 17:50:04 - src.features.chat_assistant - [33mWARNING[0m - Google AI API key not provided
+2025-06-07 17:50:04 - src.features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 17:50:04 - src.services.auth_service - [32mINFO[0m - Authentication service initialized
+2025-06-07 17:50:18 - src.features.voice_assistant - [32mINFO[0m - Microphone initialized
+2025-06-07 17:50:18 - src.features.voice_assistant - [32mINFO[0m - TTS engine initialized
+2025-06-07 17:50:18 - src.features.voice_assistant - [32mINFO[0m - Voice Assistant initialized
+2025-06-07 17:50:18 - src.features.focus_mode - [32mINFO[0m - Focus Mode initialized
+2025-06-07 17:50:18 - src.features.scheduler - [32mINFO[0m - Scheduler initialized
+2025-06-07 17:50:18 - src.features.chat_assistant - [33mWARNING[0m - Google AI API key not provided
+2025-06-07 17:50:18 - src.features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 17:50:19 - core.app - [32mINFO[0m - GUI application started successfully
+2025-06-07 17:51:14 - src.features.focus_mode - [32mINFO[0m - Added fc.com to blocked sites

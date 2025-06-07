@@ -1,47 +1,52 @@
 #!/usr/bin/env python3
+"""
+Study Helper Application - Main Entry Point
 
+A comprehensive study helper application with voice recognition,
+smart scheduling, focus mode, and AI chat assistant.
+"""
 
-import os
 import sys
-import threading
-import time
-import logging
+import os
+import traceback
 from pathlib import Path
-from dotenv import load_dotenv
 
-# Add the current directory to Python path
-sys.path.append(str(Path(__file__).parent))
+# Add the src directory to the Python path
+src_path = Path(__file__).parent / "src"
+sys.path.insert(0, str(src_path))
 
-from src.core.app import StudyHelperApp
-from src.utils.logger import setup_logger
-from src.utils.config import Config
+from utils.logger import get_logger
+from utils.config import Config
+
+# Initialize logger
+logger = get_logger(__name__)
 
 def main():
+    """Main entry point for the Study Helper application."""
     try:
-        load_dotenv()
+        logger.info("=" * 60)
+        logger.info("Starting Study Helper Application")
+        logger.info("=" * 60)
         
-        logger = setup_logger()
-        logger.info("🚀 Starting Study Helper Application...")
-        
+        # Load configuration
         config = Config()
+        logger.info(f"Configuration loaded successfully")
+        logger.info(f"GUI Mode: {config.GUI_MODE}")
         
-        if not config.validate():
-            logger.error("❌ Configuration validation failed. Please check your .env file.")
-            sys.exit(1)
+        # Import and start the application
+        from core.app import StudyHelperApp
         
-        app = StudyHelperApp(config)
-        
-        logger.info("✅ Study Helper is ready!")
+        # Create and run the application
+        app = StudyHelperApp()
         app.run()
         
     except KeyboardInterrupt:
-        logger.info("👋 Study Helper shutting down gracefully...")
+        logger.info("Application interrupted by user")
+        sys.exit(0)
     except Exception as e:
-        logger.error(f"💥 Unexpected error: {e}")
-        raise
-    finally:
-        if 'app' in locals():
-            app.cleanup()
+        logger.error(f"Failed to start application: {str(e)}")
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

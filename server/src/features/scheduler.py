@@ -1,197 +1,178 @@
-import threading
-import time
-import tkinter as tk
-from tkinter import ttk
-import customtkinter as ctk
-from typing import List, Dict, Any, Optional
+"""
+Scheduler service for managing study tasks and schedules.
+"""
+import json
+import os
 from datetime import datetime, timedelta
+from typing import List, Dict, Optional
+from utils.config import Config
+from utils.logger import get_logger
 
-from src.utils.logger import get_logger
-
-logger = get_logger(__name__)
-
-class SmartScheduler:    
-    def __init__(self, config, auth_service):
-        self.config = config
-        self.auth_service = auth_service
-        self.schedule_window = None
+class Scheduler:
+    """Scheduler for managing study tasks and scheduling."""
+    
+    def __init__(self):
+        """Initialize the scheduler."""
+        self.config = Config()
+        self.logger = get_logger(__name__)
         self.tasks = []
-        self.learning_data = {}
+        self.schedule_file = "data/schedule.json"
         
-        logger.info("Smart Scheduler initialized")
+        # Create data directory if it doesn't exist
+        os.makedirs(os.path.dirname(self.schedule_file), exist_ok=True)
+        
+        # Load existing tasks
+        self._load_tasks()
+        
+        self.logger.info("Scheduler initialized")
     
-    def show_interface(self):
-        if self.schedule_window and self.schedule_window.winfo_exists():
-            self.schedule_window.lift()
-            return
-        
-        self.create_scheduler_window()
-    
-    def create_scheduler_window(self):
-        self.schedule_window = ctk.CTkToplevel()
-        self.schedule_window.title("Smart Scheduler")
-        self.schedule_window.geometry("800x600")
-        
-        main_frame = ctk.CTkFrame(self.schedule_window)
-        main_frame.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        title_label = ctk.CTkLabel(
-            main_frame,
-            text="📅 Smart Scheduler",
-            font=ctk.CTkFont(size=24, weight="bold")
-        )
-        title_label.pack(pady=20)
-        
-        tabview = ctk.CTkTabview(main_frame)
-        tabview.pack(fill="both", expand=True, padx=20, pady=10)
-        
-        today_tab = tabview.add("Today's Schedule")
-        self.create_today_tab(today_tab)
-        
-        add_tab = tabview.add("Add Task")
-        self.create_add_task_tab(add_tab)
-        
-        analytics_tab = tabview.add("Analytics")
-        self.create_analytics_tab(analytics_tab)
-        
-        logger.info("Scheduler interface created")
-    
-    def create_today_tab(self, parent):
-        """Create today's schedule tab."""
-        schedule_frame = ctk.CTkFrame(parent)
-        schedule_frame.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        schedule_label = ctk.CTkLabel(
-            schedule_frame,
-            text="Today's Study Schedule",
-            font=ctk.CTkFont(size=16, weight="bold")
-        )
-        schedule_label.pack(pady=10)
-        
-        # TODO: Add actual schedule display
-        placeholder_label = ctk.CTkLabel(
-            schedule_frame,
-            text="📚 No tasks scheduled for today\nClick 'Add Task' to create your study plan!",
-            font=ctk.CTkFont(size=14)
-        )
-        placeholder_label.pack(pady=50)
-    
-    def create_add_task_tab(self, parent):
-        form_frame = ctk.CTkFrame(parent)
-        form_frame.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        ctk.CTkLabel(form_frame, text="Task Name:", font=ctk.CTkFont(size=14)).pack(pady=5)
-        self.task_name_entry = ctk.CTkEntry(form_frame, placeholder_text="e.g., Study Mathematics")
-        self.task_name_entry.pack(pady=5, padx=20, fill="x")
-        
-        ctk.CTkLabel(form_frame, text="Subject:", font=ctk.CTkFont(size=14)).pack(pady=5)
-        self.subject_entry = ctk.CTkEntry(form_frame, placeholder_text="e.g., Mathematics")
-        self.subject_entry.pack(pady=5, padx=20, fill="x")
-        
-        ctk.CTkLabel(form_frame, text="Duration (minutes):", font=ctk.CTkFont(size=14)).pack(pady=5)
-        self.duration_entry = ctk.CTkEntry(form_frame, placeholder_text="e.g., 60")
-        self.duration_entry.pack(pady=5, padx=20, fill="x")
-        
-        ctk.CTkLabel(form_frame, text="Priority:", font=ctk.CTkFont(size=14)).pack(pady=5)
-        self.priority_var = ctk.StringVar(value="Medium")
-        priority_menu = ctk.CTkOptionMenu(form_frame, variable=self.priority_var, 
-                                        values=["Low", "Medium", "High", "Urgent"])
-        priority_menu.pack(pady=5, padx=20, fill="x")
-        
-        add_button = ctk.CTkButton(
-            form_frame,
-            text="➕ Add Task",
-            command=self.add_task,
-            font=ctk.CTkFont(size=14)
-        )
-        add_button.pack(pady=20)
-    
-    def create_analytics_tab(self, parent):
-        analytics_frame = ctk.CTkFrame(parent)
-        analytics_frame.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        analytics_label = ctk.CTkLabel(
-            analytics_frame,
-            text="📊 Study Analytics",
-            font=ctk.CTkFont(size=16, weight="bold")
-        )
-        analytics_label.pack(pady=10)
-        
-        # TODO: Add actual analytics
-        placeholder_label = ctk.CTkLabel(
-            analytics_frame,
-            text="📈 Analytics will appear here once you start studying!",
-            font=ctk.CTkFont(size=14)
-        )
-        placeholder_label.pack(pady=50)
-    
-    def add_task(self):
-        task_name = self.task_name_entry.get().strip()
-        subject = self.subject_entry.get().strip()
-        duration_str = self.duration_entry.get().strip()
-        priority = self.priority_var.get()
-        
-        if not task_name or not subject or not duration_str:
-            return
-        
+    def _load_tasks(self):
+        """Load tasks from file."""
         try:
-            duration = int(duration_str)
-        except ValueError:
-            # Show error message
-            return
-        
+            if os.path.exists(self.schedule_file):
+                with open(self.schedule_file, 'r') as f:
+                    self.tasks = json.load(f)
+                self.logger.info(f"Loaded {len(self.tasks)} tasks")
+            else:
+                self.tasks = []
+        except Exception as e:
+            self.logger.error(f"Error loading tasks: {e}")
+            self.tasks = []
+    
+    def _save_tasks(self):
+        """Save tasks to file."""
+        try:
+            with open(self.schedule_file, 'w') as f:
+                json.dump(self.tasks, f, indent=2)
+            self.logger.info("Tasks saved successfully")
+        except Exception as e:
+            self.logger.error(f"Error saving tasks: {e}")
+    
+    def add_task(self, task_data: Dict):
+        """Add a new task."""
         task = {
-            'name': task_name,
-            'subject': subject,
-            'duration': duration,
-            'priority': priority,
-            'created_at': time.time(),
-            'completed': False
+            "id": len(self.tasks) + 1,
+            "title": task_data.get("title", ""),
+            "description": task_data.get("description", ""),
+            "due_date": task_data.get("due_date", ""),
+            "priority": task_data.get("priority", "medium"),
+            "completed": False,
+            "created_at": datetime.now().isoformat()
         }
         
         self.tasks.append(task)
+        self._save_tasks()
         
-        self.auth_service.send_activity_log('task_added', task)
-        
-        self.task_name_entry.delete(0, 'end')
-        self.subject_entry.delete(0, 'end')
-        self.duration_entry.delete(0, 'end')
-        
-        logger.info(f"Task added: {task_name}")
+        self.logger.info(f"Added task: {task['title']}")
+        return task
     
-    def get_schedule(self, date: Optional[datetime] = None) -> List[Dict[str, Any]]:
-        if date is None:
-            date = datetime.now()
-        
-        # TODO: Implement smart scheduling algorithm
-        return self.tasks
+    def get_tasks(self, completed: Optional[bool] = None) -> List[Dict]:
+        """Get tasks, optionally filtered by completion status."""
+        if completed is None:
+            return self.tasks.copy()
+        else:
+            return [task for task in self.tasks if task.get("completed", False) == completed]
     
-    def optimize_schedule(self):
-        # TODO: Implement machine learning-based optimization
-        logger.info("Schedule optimization triggered")
+    def complete_task(self, task_id: int) -> bool:
+        """Mark a task as completed."""
+        for task in self.tasks:
+            if task["id"] == task_id:
+                task["completed"] = True
+                task["completed_at"] = datetime.now().isoformat()
+                self._save_tasks()
+                self.logger.info(f"Completed task: {task['title']}")
+                return True
+        return False
     
-    def record_study_session(self, task_id: str, duration: float, effectiveness: float):
-        session_data = {
-            'task_id': task_id,
-            'duration': duration,
-            'effectiveness': effectiveness,
-            'timestamp': time.time()
-        }
-        
-        if task_id not in self.learning_data:
-            self.learning_data[task_id] = []
-        
-        self.learning_data[task_id].append(session_data)
-        
-        self.auth_service.send_activity_log('study_session_completed', session_data)
-        
-        logger.info(f"Study session recorded: {task_id}")
+    def delete_task(self, task_id: int) -> bool:
+        """Delete a task."""
+        for i, task in enumerate(self.tasks):
+            if task["id"] == task_id:
+                deleted_task = self.tasks.pop(i)
+                self._save_tasks()
+                self.logger.info(f"Deleted task: {deleted_task['title']}")
+                return True
+        return False
     
-    def get_productivity_insights(self) -> Dict[str, Any]:
-        # TODO: Analyze learning data and provide insights
-        return {
-            'total_sessions': len(self.learning_data),
-            'average_effectiveness': 0.8,
-            'best_time_of_day': '10:00 AM',
-            'most_productive_subject': 'Mathematics'
-        }
+    def get_today_tasks(self) -> List[Dict]:
+        """Get tasks due today."""
+        today = datetime.now().strftime("%Y-%m-%d")
+        return [task for task in self.tasks if task.get("due_date") == today and not task.get("completed", False)]
+    
+    def get_upcoming_tasks(self, days: int = 7) -> List[Dict]:
+        """Get tasks due in the next N days."""
+        upcoming_tasks = []
+        today = datetime.now().date()
+        
+        for task in self.tasks:
+            if task.get("completed", False):
+                continue
+                
+            due_date_str = task.get("due_date")
+            if due_date_str:
+                try:
+                    due_date = datetime.strptime(due_date_str, "%Y-%m-%d").date()
+                    if today <= due_date <= today + timedelta(days=days):
+                        upcoming_tasks.append(task)
+                except ValueError:
+                    continue
+        
+        # Sort by due date
+        upcoming_tasks.sort(key=lambda x: x.get("due_date", ""))
+        return upcoming_tasks
+    
+    def suggest_study_schedule(self) -> List[Dict]:
+        """Suggest a study schedule based on tasks."""
+        pending_tasks = self.get_tasks(completed=False)
+        if not pending_tasks:
+            return []
+        
+        # Simple scheduling algorithm
+        schedule = []
+        current_time = datetime.now()
+        
+        for task in pending_tasks[:5]:  # Limit to 5 tasks
+            suggestion = {
+                "task": task,
+                "suggested_time": current_time.strftime("%H:%M"),
+                "duration": "30 minutes",  # Default duration
+                "priority": task.get("priority", "medium")
+            }
+            schedule.append(suggestion)
+            current_time += timedelta(minutes=45)  # 30 min task + 15 min break
+        
+        return schedule
+    
+    def get_tasks_for_date(self, date_str: str) -> List[Dict]:
+        """Get tasks for a specific date."""
+        return [task for task in self.tasks if task.get("due_date") == date_str]
+    
+    def get_weekly_schedule(self) -> Dict[str, List[Dict]]:
+        """Get tasks organized by day for the current week."""
+        today = datetime.now()
+        start_of_week = today - timedelta(days=today.weekday())
+        
+        weekly_schedule = {}
+        for i in range(7):
+            day = start_of_week + timedelta(days=i)
+            date_str = day.strftime("%Y-%m-%d")
+            weekly_schedule[date_str] = self.get_tasks_for_date(date_str)
+        
+        return weekly_schedule
+    
+    def get_upcoming_tasks(self, days: int = 7) -> List[Dict]:
+        """Get upcoming tasks within the specified number of days."""
+        today = datetime.now()
+        upcoming = []
+        
+        for i in range(1, days + 1):
+            future_date = today + timedelta(days=i)
+            date_str = future_date.strftime("%Y-%m-%d")
+            tasks_for_date = self.get_tasks_for_date(date_str)
+            upcoming.extend(tasks_for_date)
+        
+        # Sort by due date and priority
+        upcoming.sort(key=lambda x: (x.get("due_date", ""), 
+                                   {"high": 0, "medium": 1, "low": 2}.get(x.get("priority", "medium").lower(), 1)))
+        
+        return upcoming
