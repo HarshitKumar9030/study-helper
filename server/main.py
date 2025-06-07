@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-"""
-Study Helper Application - Main Entry Point
-
-A comprehensive study helper application with voice recognition,
-smart scheduling, focus mode, and AI chat assistant.
-"""
-
 import sys
 import os
 import traceback

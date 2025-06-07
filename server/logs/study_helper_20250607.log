@@ -232,3 +232,127 @@ IndentationError: unindent does not match any outer indentation level
 2025-06-07 17:50:18 - src.features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
 2025-06-07 17:50:19 - core.app - [32mINFO[0m - GUI application started successfully
 2025-06-07 17:51:14 - src.features.focus_mode - [32mINFO[0m - Added fc.com to blocked sites
+2025-06-07 18:13:37 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 18:13:37 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 18:13:37 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 18:13:37 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 18:13:37 - __main__ - [32mINFO[0m - GUI Mode: True
+2025-06-07 18:13:37 - core.app - [32mINFO[0m - Study Helper v1.0.0 initialized
+2025-06-07 18:13:37 - core.app - [32mINFO[0m - GUI Mode Available: True
+2025-06-07 18:13:38 - src.features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 18:13:38 - src.services.auth_service - [32mINFO[0m - Authentication service initialized
+2025-06-07 18:13:44 - src.features.voice_assistant - [32mINFO[0m - Microphone initialized
+2025-06-07 18:13:44 - src.features.voice_assistant - [32mINFO[0m - TTS engine initialized
+2025-06-07 18:13:44 - src.features.voice_assistant - [32mINFO[0m - Voice Assistant initialized
+2025-06-07 18:13:44 - src.features.focus_mode - [32mINFO[0m - Focus Mode initialized
+2025-06-07 18:13:44 - src.features.scheduler - [32mINFO[0m - Scheduler initialized
+2025-06-07 18:13:44 - src.features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 18:13:45 - core.app - [32mINFO[0m - GUI application started successfully
+2025-06-07 18:13:55 - src.features.chat_assistant - [32mINFO[0m - AI response received for message: hello...
+2025-06-07 18:14:24 - src.features.scheduler - [32mINFO[0m - Tasks saved successfully
+2025-06-07 18:14:24 - src.features.scheduler - [32mINFO[0m - Added task: jello
+2025-06-07 18:14:38 - src.features.focus_mode - [32mINFO[0m - Added dfdf to blocked sites
+2025-06-07 18:54:59 - core.app - [32mINFO[0m - Received termination signal. Shutting down...
+2025-06-07 18:54:59 - core.app - [32mINFO[0m - Shutting down Study Helper...
+2025-06-07 18:54:59 - core.app - [32mINFO[0m - Application shutdown complete
+2025-06-07 18:57:06 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 18:57:06 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 18:57:06 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 18:57:06 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 18:57:06 - __main__ - [32mINFO[0m - GUI Mode: True
+2025-06-07 18:57:06 - core.app - [32mINFO[0m - Study Helper v1.0.0 initialized
+2025-06-07 18:57:06 - core.app - [32mINFO[0m - GUI Mode Available: True
+2025-06-07 18:57:06 - core.app - [31mERROR[0m - GUI startup error: unexpected indent (chat_assistant.py, line 298)
+2025-06-07 18:57:06 - core.app - [31mERROR[0m - Application error: unexpected indent (chat_assistant.py, line 298)
+2025-06-07 18:57:06 - core.app - [32mINFO[0m - Falling back to console mode...
+2025-06-07 18:57:06 - core.app - [32mINFO[0m - Starting console mode...
+2025-06-07 18:57:06 - __main__ - [31mERROR[0m - Failed to start application: unexpected indent (chat_assistant.py, line 298)
+2025-06-07 18:57:06 - __main__ - [31mERROR[0m - Traceback: Traceback (most recent call last):
+  File "C:\Users\Harshit\study-helper\server\src\core\app.py", line 40, in run
+    self._run_gui()
+    ~~~~~~~~~~~~~^^
+  File "C:\Users\Harshit\study-helper\server\src\core\app.py", line 55, in _run_gui
+    from ui.main_window import MainWindow
+  File "C:\Users\Harshit\study-helper\server\src\ui\main_window.py", line 17, in <module>
+    from src.ui.widgets.chat_assistant import ChatAssistantWidget
+  File "C:\Users\Harshit\study-helper\server\src\ui\widgets\chat_assistant.py", line 10, in <module>
+    from src.features.chat_assistant import ChatAssistant
+  File "C:\Users\Harshit\study-helper\server\src\features\chat_assistant.py", line 298
+    return self.get_response(message)
+IndentationError: unexpected indent
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Harshit\study-helper\server\main.py", line 41, in main
+    app.run()
+    ~~~~~~~^^
+  File "C:\Users\Harshit\study-helper\server\src\core\app.py", line 47, in run
+    self._run_console()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Harshit\study-helper\server\src\core\app.py", line 104, in _run_console
+    from features.chat_assistant import ChatAssistant
+  File "C:\Users\Harshit\study-helper\server\src\features\chat_assistant.py", line 298
+    return self.get_response(message)
+IndentationError: unexpected indent
+
+2025-06-07 18:57:53 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 18:57:53 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 18:57:53 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 18:57:53 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 18:57:53 - __main__ - [32mINFO[0m - GUI Mode: True
+2025-06-07 18:57:53 - core.app - [32mINFO[0m - Study Helper v1.0.0 initialized
+2025-06-07 18:57:53 - core.app - [32mINFO[0m - GUI Mode Available: True
+2025-06-07 18:57:53 - core.app - [31mERROR[0m - GUI startup error: unexpected indent (chat_assistant.py, line 298)
+2025-06-07 18:57:53 - core.app - [31mERROR[0m - Application error: unexpected indent (chat_assistant.py, line 298)
+2025-06-07 18:57:53 - core.app - [32mINFO[0m - Falling back to console mode...
+2025-06-07 18:57:53 - core.app - [32mINFO[0m - Starting console mode...
+2025-06-07 18:57:53 - __main__ - [31mERROR[0m - Failed to start application: unexpected indent (chat_assistant.py, line 298)
+2025-06-07 18:57:53 - __main__ - [31mERROR[0m - Traceback: Traceback (most recent call last):
+  File "C:\Users\Harshit\study-helper\server\src\core\app.py", line 40, in run
+    self._run_gui()
+    ~~~~~~~~~~~~~^^
+  File "C:\Users\Harshit\study-helper\server\src\core\app.py", line 55, in _run_gui
+    from ui.main_window import MainWindow
+  File "C:\Users\Harshit\study-helper\server\src\ui\main_window.py", line 17, in <module>
+    from src.ui.widgets.chat_assistant import ChatAssistantWidget
+  File "C:\Users\Harshit\study-helper\server\src\ui\widgets\chat_assistant.py", line 10, in <module>
+    from src.features.chat_assistant import ChatAssistant
+  File "C:\Users\Harshit\study-helper\server\src\features\chat_assistant.py", line 298
+    return self.get_response(message)
+IndentationError: unexpected indent
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\Harshit\study-helper\server\main.py", line 34, in main
+    app.run()
+    ~~~~~~~^^
+  File "C:\Users\Harshit\study-helper\server\src\core\app.py", line 47, in run
+    self._run_console()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Harshit\study-helper\server\src\core\app.py", line 104, in _run_console
+    from features.chat_assistant import ChatAssistant
+  File "C:\Users\Harshit\study-helper\server\src\features\chat_assistant.py", line 298
+    return self.get_response(message)
+IndentationError: unexpected indent
+
+2025-06-07 19:06:46 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 19:06:46 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 19:06:46 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 19:06:46 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 19:06:46 - __main__ - [32mINFO[0m - GUI Mode: True
+2025-06-07 19:06:46 - core.app - [32mINFO[0m - Study Helper v1.0.0 initialized
+2025-06-07 19:06:46 - core.app - [32mINFO[0m - GUI Mode Available: True
+2025-06-07 19:06:46 - src.features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 19:06:46 - src.services.auth_service - [32mINFO[0m - Authentication service initialized
+2025-06-07 19:07:05 - src.features.voice_assistant - [32mINFO[0m - Microphone initialized
+2025-06-07 19:07:05 - src.features.voice_assistant - [32mINFO[0m - TTS engine initialized
+2025-06-07 19:07:05 - src.features.voice_assistant - [32mINFO[0m - Voice Assistant initialized
+2025-06-07 19:07:05 - src.features.focus_mode - [32mINFO[0m - Focus Mode initialized
+2025-06-07 19:07:05 - src.features.scheduler - [32mINFO[0m - Loaded 1 tasks
+2025-06-07 19:07:05 - src.features.scheduler - [32mINFO[0m - Scheduler initialized
+2025-06-07 19:07:05 - src.features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 19:07:06 - core.app - [32mINFO[0m - GUI application started successfully
+2025-06-07 19:07:16 - src.features.chat_assistant - [31mERROR[0m - Cannot connect to AI API
+2025-06-07 19:07:42 - src.features.chat_assistant - [31mERROR[0m - Cannot connect to AI API
