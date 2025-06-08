@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
@@ -44,11 +44,17 @@ const Navbar = () => {
   const { data: session, status } = useSession();
   const { theme, setTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
+  // Prevent hydration mismatch
+  console.log(session?.user)
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const toggleTheme = () => {
+    if (!mounted) return;
     setTheme(theme === "dark" ? "light" : "dark");
   };
-
   const getUserInitials = (name: string) => {
     return name
       .split(" ")
@@ -150,10 +156,13 @@ const Navbar = () => {
 
                   {/* Mobile Menu Footer */}
                   <div className="p-6 border-t">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
+                    <div className="flex items-center gap-3">                      <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
                         <AvatarImage
-                          src={session.user?.image || ""}
+                          src={
+                            session.user?.image
+                              ? getOptimizedImageUrl(session.user.image, "w_40,h_40,c_thumb,g_face,f_auto,q_auto")
+                              : ""
+                          }
                           alt={session.user?.name || ""}
                           className="object-cover"
                         />
@@ -180,17 +189,20 @@ const Navbar = () => {
                 </div>
               </SheetContent>
             </Sheet>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            className="h-9 w-9 transition-all duration-200 "
-          >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all duration-300 dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all duration-300 dark:rotate-0 dark:scale-100" />
-            <span className="sr-only">Toggle theme</span>
-          </Button>{" "}
+          )}          {/* Theme Toggle */}
+          {mounted && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="h-9 w-9 transition-all duration-200 hover:scale-110"
+              disabled={!mounted}
+            >
+              <Sun className="h-4 w-4 rotate-0 scale-100 transition-all duration-300 dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all duration-300 dark:rotate-0 dark:scale-100" />
+              <span className="sr-only">Toggle theme</span>
+            </Button>
+          )}{" "}
           {/* Profile Dropdown / Auth Buttons */}
           {status === "loading" ? (
             <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
@@ -200,10 +212,14 @@ const Navbar = () => {
                 <Button
                   variant="ghost"
                   className="relative h-10 w-10 rounded-full ring-offset-background transition-all duration-300 hover:ring-2 hover:ring-ring hover:ring-offset-2 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >
-                  <Avatar className="h-9 w-9 border-2 border-background shadow-md transition-all duration-300 hover:shadow-lg">
+                >                  
+                <Avatar className="h-9 w-9 border-2 border-background shadow-md transition-all duration-300 hover:shadow-lg">
                     <AvatarImage
-                      src={session.user?.image || ""}
+                      src={
+                        session.user?.image
+                          ? getOptimizedImageUrl(session.user.image, "w_36,h_36,c_thumb,g_face,f_auto,q_auto")
+                          : ""
+                      }
                       alt={session.user?.name || ""}
                       className="object-cover"
                     />
@@ -222,10 +238,13 @@ const Navbar = () => {
                 sideOffset={8}
               >
                 {/* User Info Header */}
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border border-purple-100 dark:border-purple-800/30 transition-all duration-300 hover:shadow-sm">
-                  <Avatar className="h-12 w-12 border-2 border-white dark:border-gray-800 shadow-sm">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border border-purple-100 dark:border-purple-800/30 transition-all duration-300 hover:shadow-sm">                  <Avatar className="h-12 w-12 border-2 border-white dark:border-gray-800 shadow-sm">
                     <AvatarImage
-                      src={session.user?.image || ""}
+                      src={
+                        session.user?.image
+                          ? getOptimizedImageUrl(session.user.image, "w_48,h_48,c_thumb,g_face,f_auto,q_auto")
+                          : ""
+                      }
                       alt={session.user?.name || ""}
                       className="object-cover"
                     />

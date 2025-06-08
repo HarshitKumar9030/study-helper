@@ -43,12 +43,27 @@ export const uploadToCloudinaryClient = async (
 };
 
 export const getOptimizedImageUrl = (
-  publicId: string,
+  publicIdOrUrl: string,
   transformations: string = 'w_400,h_400,c_fill,f_auto,q_auto'
 ): string => {
-  if (!publicId) return '';
+  if (!publicIdOrUrl) return '';
   
-  return `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/${transformations}/${publicId}`;
+  // If it's already a full Cloudinary URL, we need to insert transformations
+  if (publicIdOrUrl.includes('res.cloudinary.com')) {
+    // Check if it already has transformations
+    const hasTransformations = publicIdOrUrl.includes('w_') || publicIdOrUrl.includes('h_') || publicIdOrUrl.includes('c_');
+    
+    if (hasTransformations) {
+      // Replace existing transformations with new ones
+      return publicIdOrUrl.replace(/\/[^/]*w_[^/]*\//, `/${transformations}/`);
+    } else {
+      // Insert transformations into the URL
+      return publicIdOrUrl.replace('/upload/', `/upload/${transformations}/`);
+    }
+  }
+  
+  // If it's just a public ID, build the URL normally
+  return `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/${transformations}/${publicIdOrUrl}`;
 };
 
 export const deleteFromCloudinary = async (publicId: string): Promise<void> => {

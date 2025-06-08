@@ -15,10 +15,9 @@ export async function GET(request: NextRequest) {
           provider: 'Google Gemini'
         },
         database: {
-          status: 'connected' // You can add actual DB check here
+          status: 'connected'
         }
-      },
-      version: '1.0.0'
+      }
     };
     
     return NextResponse.json({
