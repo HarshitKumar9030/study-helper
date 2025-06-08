@@ -24,7 +24,7 @@ export const uploadToCloudinaryClient = async (
 ): Promise<CloudinaryUploadResult> => {
   const formData = new FormData();
   formData.append('file', file);
-  formData.append('upload_preset', 'study_helper_uploads'); // You'll need to create this preset in Cloudinary
+  formData.append('upload_preset', 'study_helper_uploads'); 
   formData.append('folder', folder);
 
   const response = await fetch(
@@ -48,21 +48,16 @@ export const getOptimizedImageUrl = (
 ): string => {
   if (!publicIdOrUrl) return '';
   
-  // If it's already a full Cloudinary URL, we need to insert transformations
   if (publicIdOrUrl.includes('res.cloudinary.com')) {
-    // Check if it already has transformations
     const hasTransformations = publicIdOrUrl.includes('w_') || publicIdOrUrl.includes('h_') || publicIdOrUrl.includes('c_');
     
     if (hasTransformations) {
-      // Replace existing transformations with new ones
       return publicIdOrUrl.replace(/\/[^/]*w_[^/]*\//, `/${transformations}/`);
     } else {
-      // Insert transformations into the URL
       return publicIdOrUrl.replace('/upload/', `/upload/${transformations}/`);
     }
   }
   
-  // If it's just a public ID, build the URL normally
   return `https://res.cloudinary.com/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload/${transformations}/${publicIdOrUrl}`;
 };
 
