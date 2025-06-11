@@ -63,11 +63,12 @@ const Navbar = () => {
       .toUpperCase()
       .slice(0, 2);
   };
-
   const navigationItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
-    { href: "/calendar", label: "Calendar", icon: Calendar },
-    { href: "/analytics", label: "Analytics", icon: BarChart3 },
+    { href: "/chat", label: "Chat", icon: MessageCircle },
+    { href: "/scheduler", label: "Scheduler", icon: Calendar },
+    { href: "/voice", label: "Voice Assistant", icon: Mic },
+    { href: "/focus", label: "Focus Mode", icon: Focus },
   ];
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
