@@ -1,15 +1,16 @@
 import { Metadata } from 'next';
-import VoiceAssistant from '@/components/features/VoiceAssistant';
+import VoiceAssistant from '@/components/features/voice-assistant/VoiceAssistant';
 
 export const metadata: Metadata = {
-  title: 'Voice Assistant - Study Helper',
-  description: 'AI-powered voice assistant for hands-free interaction and voice commands',
+  title: 'Enhanced Voice Assistant - Study Helper',
+  description: 'AI-powered voice assistant with enhanced UI, animations, and smart features for hands-free study assistance',
 };
 
 export default function VoiceAssistantPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <VoiceAssistant />
-    </div>
+    <div className="min-h-screen p-8 bg-background transition-colors duration-200">
+     
+          <VoiceAssistant />
+      </div>
   );
 }

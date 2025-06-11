@@ -36,6 +36,24 @@ const SYSTEM_PROMPTS = {
   
   Always be encouraging, practical, and focused on helping students learn effectively. 
   Keep responses concise but helpful. When suggesting schedules, consider the Pomodoro technique and spaced repetition.`,
+    voice_assistant: `You are a helpful voice assistant for students. CRITICAL: Your responses will be spoken aloud by text-to-speech technology.
+
+IMPORTANT RULES:
+- NEVER return JSON, code blocks, markdown, or any structured format
+- NEVER use backticks, curly braces, or any technical formatting
+- NEVER start with "json" or wrap responses in quotes
+- ONLY return natural, conversational text that sounds good when spoken
+- Keep responses under 3 sentences for voice clarity
+- Use simple, clear language
+- Be encouraging and supportive
+- Speak directly to the student
+
+GOOD EXAMPLE: "Newton's third law states that for every action, there is an equal and opposite reaction. This means when you push on something, it pushes back on you with the same force."
+
+BAD EXAMPLE: {"message": "Newton's third law...", "suggestions": [...]}
+
+You help with study questions, motivation, scheduling, and academic support. 
+Always respond as if you're speaking face-to-face with the student.`,
   
   scheduler: `You are a smart scheduling assistant that helps students optimize their study time. 
   Your role is to:
@@ -135,10 +153,79 @@ class GeminiAI {
           actionItems: [],
           confidence: 0.7
         };
-      }
-    } catch (error) {
+      }    } catch (error) {
       console.error('Error getting study assistance:', error);
       return this.getFallbackResponse(question);
+    }
+  }
+
+  /**
+   * Get voice assistance - returns plain text suitable for speech synthesis
+   */
+  async getVoiceAssistance(
+    question: string, 
+    context?: { subject?: string; difficulty?: string; timeAvailable?: number }
+  ): Promise<StudyAssistantResponse> {
+    if (!this.isInitialized) {
+      return this.getFallbackVoiceResponse(question);
+    }
+
+    try {
+      const contextPrompt = context ? `
+        Context:
+        - Subject: ${context.subject || 'General'}
+        - Difficulty Level: ${context.difficulty || 'Medium'}
+        - Time Available: ${context.timeAvailable || 'Not specified'} minutes
+      ` : '';      const prompt = `${SYSTEM_PROMPTS.voice_assistant}
+      
+      ${contextPrompt}
+      
+      Student Question: ${question}
+      
+      IMPORTANT: Respond with ONLY plain text that can be spoken aloud. 
+      DO NOT use JSON, markdown, code blocks, or any formatting.
+      DO NOT start with backticks, curly braces, or "json".
+      
+      Just give a direct, helpful answer in natural speech:`;
+
+      const result = await this.model.generateContent(prompt);
+      const responseText = result.response.text();
+      
+      // Clean any potential formatting artifacts
+      let cleanResponse = responseText.trim();
+      
+      // Remove any JSON-like artifacts that might appear
+      cleanResponse = cleanResponse.replace(/^```json\s*/gi, '');
+      cleanResponse = cleanResponse.replace(/\s*```$/g, '');
+      cleanResponse = cleanResponse.replace(/^\{.*?"message"\s*:\s*"/gi, '');
+      cleanResponse = cleanResponse.replace(/",?\s*"suggestions".*\}$/gi, '');
+      cleanResponse = cleanResponse.replace(/^["']|["']$/g, ''); // Remove quotes
+      
+      // If it still looks like JSON, extract just the message
+      if (cleanResponse.includes('"message"') || cleanResponse.startsWith('{')) {
+        try {
+          const jsonMatch = cleanResponse.match(/"message"\s*:\s*"([^"]+)"/);
+          if (jsonMatch) {
+            cleanResponse = jsonMatch[1];
+          }
+        } catch (e) {
+          // If JSON parsing fails, use fallback
+          cleanResponse = 'I can help you with that. Could you please rephrase your question?';
+        }
+      }
+      
+      // Final cleanup
+      cleanResponse = cleanResponse.replace(/\\"/g, '"').replace(/\\n/g, ' ').trim();
+      
+      return {
+        message: cleanResponse,
+        suggestions: [], // Voice responses don't include suggestions
+        actionItems: [], // Voice responses don't include action items
+        confidence: 0.9 // High confidence since this is optimized for voice
+      };
+    } catch (error) {
+      console.error('Error getting voice assistance:', error);
+      return this.getFallbackVoiceResponse(question);
     }
   }
 
@@ -296,7 +383,6 @@ class GeminiAI {
       return this.getFallbackAnalysis(studyData);
     }
   }
-
   // Fallback responses when AI is not available
   private getFallbackResponse(question: string): StudyAssistantResponse {
     return {
@@ -309,6 +395,26 @@ class GeminiAI {
       ],
       actionItems: [],
       confidence: 0.5
+    };
+  }
+
+  private getFallbackVoiceResponse(question: string): StudyAssistantResponse {
+    // Simple voice-friendly responses based on common questions
+    let message = "I'm having trouble connecting right now, but I'm here to help with your studies.";
+    
+    if (question.toLowerCase().includes('schedule')) {
+      message = "Try using the Pomodoro technique: study for 25 minutes, then take a 5 minute break. This helps maintain focus and prevents burnout.";
+    } else if (question.toLowerCase().includes('motivation') || question.toLowerCase().includes('tired')) {
+      message = "Remember why you started studying. Take a short break, drink some water, and start with just one small task. You've got this!";
+    } else if (question.toLowerCase().includes('physics') || question.toLowerCase().includes('newton')) {
+      message = "Physics can be challenging but it's all about understanding the patterns. Try breaking down problems step by step and practice with real world examples.";
+    }
+    
+    return {
+      message,
+      suggestions: [],
+      actionItems: [],
+      confidence: 0.6
     };
   }
 
