@@ -24,13 +24,11 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
   Moon,
-  Sun,
-  User,
+  Sun,  User,
   LogOut,
   Settings,
   BookOpen,
   Calendar,
-  Focus,
   MessageCircle,
   Mic,
   Home,
@@ -62,13 +60,11 @@ const Navbar = () => {
       .join("")
       .toUpperCase()
       .slice(0, 2);
-  };
-  const navigationItems = [
+  };  const navigationItems = [
     { href: "/dashboard", label: "Dashboard", icon: Home },
     { href: "/chat", label: "Chat", icon: MessageCircle },
     { href: "/scheduler", label: "Scheduler", icon: Calendar },
     { href: "/voice", label: "Voice Assistant", icon: Mic },
-    { href: "/focus", label: "Focus Mode", icon: Focus },
   ];
 
   const closeMobileMenu = () => setMobileMenuOpen(false);

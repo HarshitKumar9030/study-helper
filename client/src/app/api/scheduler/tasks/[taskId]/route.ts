@@ -5,12 +5,10 @@ import connectMongo from '@/lib/mongodb';
 import { TaskModel } from '@/lib/models/scheduler';
 import mongoose from 'mongoose';
 
-/**
- * GET /api/scheduler/tasks/[taskId] - Get a specific task
- */
+
 export async function GET(
   request: NextRequest,
-  { params }: { params: { taskId: string } }
+  { params }: { params: Promise<{ taskId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -20,11 +18,9 @@ export async function GET(
 
     await connectMongo();
     const userId = new mongoose.Types.ObjectId(session.user.id);
-    const { taskId } = params;
-
-    const task = await TaskModel.findOne({
+    const { taskId } = await params;    const task = await TaskModel.findOne({
       userId,
-      taskId
+      _id: taskId
     }).populate('dependencies', 'title completed dueDate').lean();
 
     if (!task) {
@@ -44,12 +40,9 @@ export async function GET(
   }
 }
 
-/**
- * PUT /api/scheduler/tasks/[taskId] - Update a specific task
- */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { taskId: string } }
+  { params }: { params: Promise<{ taskId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -59,11 +52,9 @@ export async function PUT(
 
     await connectMongo();
     const userId = new mongoose.Types.ObjectId(session.user.id);
-    const { taskId } = params;
-    const body = await request.json();
-
-    // Find the task first
-    const task = await TaskModel.findOne({ userId, taskId });
+    const { taskId } = await params;
+    const body = await request.json();    // Find the task first
+    const task = await TaskModel.findOne({ userId, _id: taskId });
     if (!task) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
@@ -144,12 +135,10 @@ export async function PUT(
   }
 }
 
-/**
- * DELETE /api/scheduler/tasks/[taskId] - Delete a specific task
- */
+
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { taskId: string } }
+  { params }: { params: Promise<{ taskId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -159,11 +148,9 @@ export async function DELETE(
 
     await connectMongo();
     const userId = new mongoose.Types.ObjectId(session.user.id);
-    const { taskId } = params;
-
-    const result = await TaskModel.deleteOne({
+    const { taskId } = await params;    const result = await TaskModel.deleteOne({
       userId,
-      taskId
+      _id: taskId
     });
 
     if (result.deletedCount === 0) {

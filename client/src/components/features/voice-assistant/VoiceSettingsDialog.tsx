@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Settings, Wrench } from 'lucide-react';
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogHeader,
@@ -44,8 +45,7 @@ export function VoiceSettingsDialog({ settings, onSettingsChange }: VoiceSetting
           <Settings className="h-4 w-4 mr-2" />
           Voice Settings
         </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      </DialogTrigger>      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Voice Assistant Settings</DialogTitle>
           <DialogDescription>
@@ -53,17 +53,18 @@ export function VoiceSettingsDialog({ settings, onSettingsChange }: VoiceSetting
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="basic" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Basic
-            </TabsTrigger>
-            <TabsTrigger value="advanced" className="flex items-center gap-2">
-              <Wrench className="h-4 w-4" />
-              Advanced
-            </TabsTrigger>
-          </TabsList>
+        <DialogBody>
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="basic" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Basic
+              </TabsTrigger>
+              <TabsTrigger value="advanced" className="flex items-center gap-2">
+                <Wrench className="h-4 w-4" />
+                Advanced
+              </TabsTrigger>
+            </TabsList>
           
           <TabsContent value="basic" className="space-y-6 mt-6">
             {/* Basic Speech Settings */}
@@ -270,9 +271,9 @@ export function VoiceSettingsDialog({ settings, onSettingsChange }: VoiceSetting
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+            </div>            </TabsContent>
+          </Tabs>
+        </DialogBody>
       </DialogContent>
     </Dialog>
   );

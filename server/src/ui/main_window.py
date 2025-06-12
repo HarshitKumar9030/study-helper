@@ -12,7 +12,6 @@ from src.ui.styles import (
 )
 from src.ui.widgets.dashboard import DashboardWidget
 from src.ui.widgets.voice_assistant import VoiceAssistantWidget
-from src.ui.widgets.focus_mode import FocusModeWidget
 from src.ui.widgets.scheduler import SchedulerWidget
 from src.ui.widgets.chat_assistant import ChatAssistantWidget
 from src.ui.widgets.settings import SettingsWidget
@@ -174,12 +173,10 @@ class MainWindow(QMainWindow):
         
         # Stacked widget for different pages
         self.stacked_widget = QStackedWidget()
-        
-        # Create and add page widgets
+          # Create and add page widgets
         self.pages = {
             "dashboard": DashboardWidget(self.auth_token),
             "voice": VoiceAssistantWidget(),
-            "focus": FocusModeWidget(),
             "scheduler": SchedulerWidget(),
             "chat": ChatAssistantWidget(),
             "settings": SettingsWidget()
