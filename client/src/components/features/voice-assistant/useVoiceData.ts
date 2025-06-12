@@ -8,16 +8,12 @@ export function useVoiceData() {
   const { toast } = useToast();
   const [isSyncing, setIsSyncing] = useState(false);
   const sessionIdRef = useRef<string>(Date.now().toString());
+
   // Load voice settings and commands from backend
   const loadVoiceData = useCallback(async (
     setVoiceSettings: (setter: (prev: VoiceSettings) => VoiceSettings) => void,
     setVoiceCommands: (commands: VoiceCommand[]) => void
   ) => {
-    if (isSyncing) {
-      console.log('Already syncing, skipping duplicate request');
-      return;
-    }
-    
     try {
       setIsSyncing(true);
       

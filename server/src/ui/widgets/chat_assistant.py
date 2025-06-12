@@ -8,8 +8,9 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
 from PyQt5.QtGui import QFont, QTextCursor
 from src.features.chat_assistant import ChatAssistant
-from src.ui.styles import DARK_COLORS
+from src.ui.styles import DARK_COLORS, LIGHT_COLORS
 import datetime
+import json
 
 class ChatWorkerThread(QThread):
     """Worker thread for chat processing."""
@@ -38,6 +39,7 @@ class ChatAssistantWidget(QWidget):
         self.chat_assistant = ChatAssistant()
         self.worker_thread = None
         self.chat_history = []
+        self.current_theme = "dark"
         self.setup_ui()
         self.setup_styles()
         self.add_welcome_message()
@@ -215,12 +217,12 @@ class ChatAssistantWidget(QWidget):
         
         layout.addWidget(title_label)
         layout.addWidget(self.suggestions_list)
-        
+
         return frame
     
     def setup_styles(self):
         """Apply styling to the chat assistant widget."""
-        colors = DARK_COLORS
+        colors = DARK_COLORS if self.current_theme == 'dark' else LIGHT_COLORS
         
         self.setStyleSheet(f"""
             QFrame#headerCard, QFrame#chatCard, QFrame#actionsCard {{
@@ -384,8 +386,7 @@ class ChatAssistantWidget(QWidget):
         self.message_input.setEnabled(False)
         self.send_button.setEnabled(False)
         self.send_button.setText("...")
-        
-        # Start worker thread for AI response
+          # Start worker thread for AI response
         self.worker_thread = ChatWorkerThread(self.chat_assistant, message)
         self.worker_thread.response_ready.connect(self.on_response_ready)
         self.worker_thread.error_occurred.connect(self.on_response_error)
@@ -396,30 +397,38 @@ class ChatAssistantWidget(QWidget):
         """Add a message to the chat display."""
         timestamp = datetime.datetime.now().strftime("%H:%M")
         
+        # Get theme colors
+        colors = DARK_COLORS if self.current_theme == 'dark' else LIGHT_COLORS
+        
         if is_user:
             message_html = f"""
             <div style='margin-bottom: 16px; text-align: right;'>
-                <div style='display: inline-block; background-color: #3B82F6; color: white; padding: 12px 16px; border-radius: 18px 18px 4px 18px; max-width: 70%; word-wrap: break-word;'>
+                <div style='display: inline-block; background-color: {colors['primary']}; color: white; padding: 12px 16px; border-radius: 18px 18px 4px 18px; max-width: 70%; word-wrap: break-word;'>
                     {message}
                 </div>
-                <div style='font-size: 11px; color: #9CA3AF; margin-top: 4px;'>
+                <div style='font-size: 11px; color: {colors['text_secondary']}; margin-top: 4px;'>
                     You • {timestamp}
                 </div>
             </div>
             """
         else:
+            # For assistant messages, handle both plain text and HTML
+            formatted_message = message
+            if not ('<p>' in message or '<ul>' in message or '<strong>' in message):
+                # Plain text - wrap in paragraph
+                formatted_message = f"<p>{message}</p>"
+                
             message_html = f"""
             <div style='margin-bottom: 16px;'>
-                <div style='display: inline-block; background-color: #374151; color: #F9FAFB; padding: 12px 16px; border-radius: 18px 18px 18px 4px; max-width: 70%; word-wrap: break-word;'>
-                    {message}
+                <div style='display: inline-block; background-color: {colors['surface']}; color: {colors['text_primary']}; padding: 12px 16px; border-radius: 18px 18px 18px 4px; max-width: 70%; word-wrap: break-word; border: 1px solid {colors['border']};'>
+                    {formatted_message}
                 </div>
-                <div style='font-size: 11px; color: #9CA3AF; margin-top: 4px;'>
+                <div style='font-size: 11px; color: {colors['text_secondary']}; margin-top: 4px;'>
                     Assistant • {timestamp}
                 </div>
             </div>
             """
-        
-        # Append to chat display
+          # Append to chat display
         cursor = self.chat_display.textCursor()
         cursor.movePosition(QTextCursor.End)
         cursor.insertHtml(message_html)
@@ -434,11 +443,204 @@ class ChatAssistantWidget(QWidget):
             'is_user': is_user,
             'timestamp': timestamp
         })
-    
+
     def on_response_ready(self, response):
         """Handle AI response."""
+        # Try to parse as JSON first
+        try:
+            # Handle JSON responses (check for JSON structure)
+            response_stripped = response.strip()
+            if (response_stripped.startswith('{') and response_stripped.endswith('}')) or \
+               (response_stripped.startswith('[') and response_stripped.endswith(']')):
+                data = json.loads(response_stripped)
+                
+                # Handle different JSON response formats
+                if isinstance(data, dict):
+                    if 'message' in data or 'content' in data or 'response' in data:
+                        formatted_response = self.format_structured_response(data)
+                        self.add_message_to_chat(formatted_response, is_user=False)
+                        return
+                    elif 'text' in data:
+                        # Simple text response in JSON
+                        self.add_message_to_chat(data['text'], is_user=False)
+                        return
+                elif isinstance(data, list) and len(data) > 0:
+                    # Handle array responses
+                    formatted_response = self.format_list_response(data)
+                    self.add_message_to_chat(formatted_response, is_user=False)
+                    return
+        except (json.JSONDecodeError, KeyError, TypeError):
+            pass
+        
+        # Try to detect and format markdown-like responses
+        if self.has_markdown_elements(response):
+            formatted_response = self.format_markdown_response(response)
+            self.add_message_to_chat(formatted_response, is_user=False)
+            return
+        
+        # Fallback to plain text response
         self.add_message_to_chat(response, is_user=False)
     
+    def format_structured_response(self, data):
+        """Format a structured JSON response into HTML."""
+        html_parts = []
+        
+        # Handle different possible message keys
+        message_content = data.get('message') or data.get('content') or data.get('response') or data.get('text', '')
+        if message_content:
+            html_parts.append(f"<p>{message_content}</p>")
+        
+        # Suggestions
+        if 'suggestions' in data and data['suggestions']:
+            html_parts.append("<br><strong>💡 Study Tips:</strong>")
+            html_parts.append("<ul>")
+            for suggestion in data['suggestions']:
+                html_parts.append(f"<li>{suggestion}</li>")
+            html_parts.append("</ul>")
+        
+        # Action Items
+        if 'actionItems' in data and data['actionItems']:
+            html_parts.append("<br><strong>📋 Action Items:</strong>")
+            html_parts.append("<ul>")
+            for item in data['actionItems']:
+                if isinstance(item, str):
+                    html_parts.append(f"<li>{item}</li>")
+                elif isinstance(item, dict):
+                    title = item.get('title', 'Task')
+                    description = item.get('description', '')
+                    priority = item.get('priority', 'medium')
+                    time_estimate = item.get('estimatedTime', '')
+                    
+                    priority_emoji = {
+                        'high': '🔴',
+                        'medium': '🟡', 
+                        'low': '🟢'
+                    }.get(priority.lower(), '🔵')
+                    
+                    item_text = f"{priority_emoji} <strong>{title}</strong>"
+                    if description:
+                        item_text += f": {description}"
+                    if time_estimate:
+                        item_text += f" <em>({time_estimate} min)</em>"
+                    
+                    html_parts.append(f"<li>{item_text}</li>")
+            html_parts.append("</ul>")
+        
+        # Study tips (alternative to suggestions)
+        if 'tips' in data and data['tips']:
+            html_parts.append("<br><strong>📚 Study Tips:</strong>")
+            html_parts.append("<ul>")
+            for tip in data['tips']:
+                html_parts.append(f"<li>{tip}</li>")
+            html_parts.append("</ul>")
+        
+        # Resources
+        if 'resources' in data and data['resources']:
+            html_parts.append("<br><strong>📖 Resources:</strong>")
+            html_parts.append("<ul>")
+            for resource in data['resources']:
+                if isinstance(resource, str):
+                    html_parts.append(f"<li>{resource}</li>")
+                elif isinstance(resource, dict) and 'name' in resource:
+                    name = resource['name']
+                    url = resource.get('url', '')
+                    if url:
+                        html_parts.append(f"<li><a href='{url}' target='_blank'>{name}</a></li>")
+                    else:
+                        html_parts.append(f"<li>{name}</li>")
+            html_parts.append("</ul>")
+        
+        # Confidence level (if available)
+        if 'confidence' in data and isinstance(data['confidence'], (int, float)) and data['confidence'] < 0.7:
+            html_parts.append("<br><small><em>Note: This response has lower confidence. Please verify the information.</em></small>")
+        
+        return "".join(html_parts) if html_parts else "<p>No content available</p>"
+    
+    def format_list_response(self, data_list):
+        """Format a list response into HTML."""
+        html_parts = ["<ul>"]
+        for item in data_list:
+            if isinstance(item, str):
+                html_parts.append(f"<li>{item}</li>")
+            elif isinstance(item, dict):
+                # Try to format structured list items
+                title = item.get('title') or item.get('name') or str(item)
+                description = item.get('description', '')
+                if description:
+                    html_parts.append(f"<li><strong>{title}</strong>: {description}</li>")
+                else:
+                    html_parts.append(f"<li>{title}</li>")
+        html_parts.append("</ul>")
+        return "".join(html_parts)
+    
+    def has_markdown_elements(self, text):
+        """Check if text contains markdown-like elements."""
+        markdown_patterns = [
+            '**', '*', '##', '#', '- ', '* ', '1. ', '2. ', '3. ',
+            '[', '](', '`', '```', '---', '___'
+        ]
+        return any(pattern in text for pattern in markdown_patterns)
+    
+    def format_markdown_response(self, text):
+        """Convert basic markdown elements to HTML."""
+        # Convert headers
+        text = text.replace('### ', '<h3>').replace('## ', '<h2>').replace('# ', '<h1>')
+        
+        # Convert bold text
+        import re
+        text = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', text)
+        text = re.sub(r'\*(.*?)\*', r'<em>\1</em>', text)
+        
+        # Convert inline code
+        text = re.sub(r'`(.*?)`', r'<code>\1</code>', text)
+        
+        # Convert lists
+        lines = text.split('\n')
+        in_list = False
+        result_lines = []
+        
+        for line in lines:
+            line = line.strip()
+            if line.startswith('- ') or line.startswith('* '):
+                if not in_list:
+                    result_lines.append('<ul>')
+                    in_list = True
+                result_lines.append(f'<li>{line[2:]}</li>')
+            elif line.startswith(('1. ', '2. ', '3. ', '4. ', '5. ')):
+                if not in_list:
+                    result_lines.append('<ol>')
+                    in_list = True
+                result_lines.append(f'<li>{line[3:]}</li>')
+            else:
+                if in_list:
+                    result_lines.append('</ul>' if lines[result_lines.__len__()-1].startswith('<li>') else '</ol>')
+                    in_list = False
+                if line:
+                    result_lines.append(f'<p>{line}</p>')
+                else:
+                    result_lines.append('<br>')
+        
+        if in_list:
+            result_lines.append('</ul>')
+        
+        return ''.join(result_lines)
+
+    def clear_chat(self):
+        """Clear the chat display."""
+        self.chat_display.clear()
+        self.chat_history.clear()
+        self.add_welcome_message()
+    
+    def refresh(self):
+        """Refresh the chat assistant."""
+        # Could reload suggestions or update status
+        pass
+    
+    def update_theme(self, theme):
+        """Update the widget theme."""
+        self.current_theme = theme
+        self.setup_styles()
+        
     def on_response_error(self, error_msg):
         """Handle AI response error."""
         error_response = f"Sorry, I encountered an error: {error_msg}"
@@ -450,19 +652,8 @@ class ChatAssistantWidget(QWidget):
         self.send_button.setEnabled(True)
         self.send_button.setText("Send")
         self.message_input.setFocus()
-    
+
     def on_suggestion_clicked(self, item):
         """Handle suggestion click."""
         suggestion_text = item.text().replace('💡 ', '')
         self.send_quick_message(suggestion_text)
-    
-    def clear_chat(self):
-        """Clear the chat display."""
-        self.chat_display.clear()
-        self.chat_history.clear()
-        self.add_welcome_message()
-    
-    def refresh(self):
-        """Refresh the chat assistant."""
-        # Could reload suggestions or update status
-        pass

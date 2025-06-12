@@ -30,9 +30,7 @@ export async function GET(request: NextRequest) {
       // Fetch voice settings
       const settings = await VoiceSettingsModel
         .findOne({ userId })
-        .lean();
-
-      if (!settings) {
+        .lean();      if (!settings) {
         // Create default settings if none exist
         const defaultSettings = new VoiceSettingsModel({
           userId,
@@ -44,7 +42,7 @@ export async function GET(request: NextRequest) {
           wakeWordSensitivity: 0.7,
           noiseReduction: true,
           autoTranscription: true,
-          confidenceThreshold: 0.6
+          confidenceThreshold: 0.4  // Lowered to match frontend
         });
 
         const savedSettings = await defaultSettings.save();

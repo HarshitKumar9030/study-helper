@@ -64,13 +64,11 @@ class StudyHelperApp:
             app.setApplicationName(self.config.APP_NAME)
             app.setApplicationVersion(self.config.VERSION)
             
-            self.gui_app = app
-            
-            # Show authentication dialog
+            self.gui_app = app            # Show authentication dialog
             auth_dialog = AuthDialog()
             if auth_dialog.exec_() == auth_dialog.Accepted:
                 # User authenticated, show main window
-                main_window = MainWindow()
+                main_window = MainWindow(auth_dialog.auth_token, auth_dialog.auth_service)
                 main_window.show()
                 
                 logger.info("GUI application started successfully")

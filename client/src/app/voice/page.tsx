@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import VoiceAssistant from '@/components/features/voice-assistant/VoiceAssistant';
+import VoiceAssistant from '@/components/features/VoiceAssistant';
 
 export const metadata: Metadata = {
   title: 'Enhanced Voice Assistant - Study Helper',

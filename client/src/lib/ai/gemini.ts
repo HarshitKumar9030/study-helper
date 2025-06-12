@@ -34,8 +34,29 @@ const SYSTEM_PROMPTS = {
   4. Offer motivation and encouragement
   5. Help with time management and productivity
   
-  Always be encouraging, practical, and focused on helping students learn effectively. 
-  Keep responses concise but helpful. When suggesting schedules, consider the Pomodoro technique and spaced repetition.`,
+  RESPONSE FORMAT: Always respond with valid JSON containing:
+  {
+    "message": "Your helpful response to the student",
+    "suggestions": ["suggestion1", "suggestion2", "suggestion3"],
+    "actionItems": [
+      {
+        "id": "unique-id",
+        "title": "Action title",
+        "description": "What to do",
+        "priority": "low|medium|high",
+        "estimatedTime": 30,
+        "category": "study|review|break|assignment"
+      }
+    ],
+    "confidence": 0.9
+  }
+  
+  Guidelines:
+  - Keep the main message clear, helpful, and encouraging
+  - Include 2-4 practical suggestions when relevant
+  - Add 1-3 action items for concrete next steps
+  - Use appropriate priority levels and time estimates
+  - Be supportive and focused on helping students learn effectively`,
     voice_assistant: `You are a helpful voice assistant for students. CRITICAL: Your responses will be spoken aloud by text-to-speech technology.
 
 IMPORTANT RULES:
@@ -101,7 +122,6 @@ class GeminiAI {
     return this.isInitialized;
   }
 
-
   async getStudyAssistance(
     question: string, 
     context?: { subject?: string; difficulty?: string; timeAvailable?: number }
@@ -124,41 +144,188 @@ class GeminiAI {
       
       Student Question: ${question}
       
-      Please provide a helpful response with:
-      1. A clear answer to the question
-      2. Any relevant suggestions or tips
-      3. Actionable next steps if applicable
-      
-      Format your response as a JSON object with:
-      - message: string (main response)
-      - suggestions: string[] (optional tips)
-      - actionItems: array of {title, description, priority, estimatedTime, category}
-      - confidence: number (0-1, how confident you are in the advice)`;
+      Provide a helpful response following the JSON format specified above. Make sure to include practical suggestions and actionable next steps.`;
 
       const result = await this.model.generateContent(prompt);
-      const responseText = result.response.text();
+      const responseText = result.response.text().trim();
       
-      try {
-        const parsedResponse = JSON.parse(responseText);
-        return {
-          message: parsedResponse.message || responseText,
-          suggestions: parsedResponse.suggestions || [],
-          actionItems: parsedResponse.actionItems || [],
-          confidence: parsedResponse.confidence || 0.8
-        };
-      } catch {
-        return {
-          message: responseText,
-          suggestions: [],
-          actionItems: [],
-          confidence: 0.7
-        };
-      }    } catch (error) {
+      // Enhanced parsing with multiple fallback strategies
+      return this.parseStudyResponse(responseText, question);
+      
+    } catch (error) {
       console.error('Error getting study assistance:', error);
       return this.getFallbackResponse(question);
     }
   }
 
+  /**
+   * Enhanced response parser with multiple strategies
+   */
+  private parseStudyResponse(responseText: string, originalQuestion: string): StudyAssistantResponse {
+    // Strategy 1: Try direct JSON parsing
+    try {
+      const parsed = JSON.parse(responseText);
+      if (this.isValidStudyResponse(parsed)) {
+        return this.sanitizeResponse(parsed);
+      }
+    } catch (e) {
+      // Continue to next strategy
+    }
+
+    // Strategy 2: Extract JSON from markdown code blocks
+    const jsonBlockMatch = responseText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/i);
+    if (jsonBlockMatch) {
+      try {
+        const parsed = JSON.parse(jsonBlockMatch[1]);
+        if (this.isValidStudyResponse(parsed)) {
+          return this.sanitizeResponse(parsed);
+        }
+      } catch (e) {
+        // Continue to next strategy
+      }
+    }
+
+    // Strategy 3: Find JSON object in text
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (this.isValidStudyResponse(parsed)) {
+          return this.sanitizeResponse(parsed);
+        }
+      } catch (e) {
+        // Continue to next strategy
+      }
+    }
+
+    // Strategy 4: Extract structured content from plain text
+    return this.parseUnstructuredResponse(responseText, originalQuestion);
+  }
+
+  /**
+   * Validate if response has required structure
+   */
+  private isValidStudyResponse(obj: any): boolean {
+    return obj && 
+           typeof obj === 'object' && 
+           typeof obj.message === 'string' && 
+           obj.message.length > 0;
+  }
+
+  /**
+   * Sanitize and normalize response structure
+   */
+  private sanitizeResponse(response: any): StudyAssistantResponse {
+    return {
+      message: String(response.message || '').trim(),      suggestions: Array.isArray(response.suggestions) 
+        ? response.suggestions.filter((s: any) => typeof s === 'string' && s.length > 0).slice(0, 5)
+        : [],
+      actionItems: Array.isArray(response.actionItems) 
+        ? response.actionItems.map(this.sanitizeActionItem).slice(0, 5)
+        : [],
+      confidence: typeof response.confidence === 'number' 
+        ? Math.max(0, Math.min(1, response.confidence))
+        : 0.8
+    };
+  }
+
+  /**
+   * Sanitize individual action items
+   */
+  private sanitizeActionItem(item: any, index: number): ActionItem {
+    return {
+      id: String(item.id || `action-${index + 1}`),
+      title: String(item.title || `Action ${index + 1}`).slice(0, 100),
+      description: String(item.description || item.title || '').slice(0, 300),
+      priority: ['low', 'medium', 'high'].includes(item.priority) ? item.priority : 'medium',
+      estimatedTime: typeof item.estimatedTime === 'number' && item.estimatedTime > 0 
+        ? Math.min(240, item.estimatedTime) 
+        : undefined,
+      category: ['study', 'review', 'break', 'assignment'].includes(item.category) 
+        ? item.category 
+        : 'study'
+    };
+  }
+
+  /**
+   * Parse unstructured text response
+   */
+  private parseUnstructuredResponse(text: string, originalQuestion: string): StudyAssistantResponse {
+    const lines = text.split('\n').map(line => line.trim()).filter(Boolean);
+    
+    let message = '';
+    const suggestions: string[] = [];
+    const actionItems: ActionItem[] = [];
+    
+    let currentSection = 'message';
+    
+    for (const line of lines) {
+      // Detect section headers
+      if (line.toLowerCase().includes('suggestion') || line.toLowerCase().includes('tips:') || line.toLowerCase().includes('recommendations:')) {
+        currentSection = 'suggestions';
+        continue;
+      }
+      
+      if (line.toLowerCase().includes('action') || line.toLowerCase().includes('next steps') || line.toLowerCase().includes('to do:')) {
+        currentSection = 'actions';
+        continue;
+      }
+      
+      // Process content based on current section
+      if (currentSection === 'message' && !line.match(/^[-*•]\s/) && !line.match(/^\d+\./)) {
+        message += (message ? ' ' : '') + line;
+      } else if (currentSection === 'suggestions' && (line.match(/^[-*•]\s/) || line.match(/^\d+\./))) {
+        const suggestion = line.replace(/^[-*•\d.]\s*/, '').trim();
+        if (suggestion && suggestions.length < 5) {
+          suggestions.push(suggestion);
+        }
+      } else if (currentSection === 'actions' && (line.match(/^[-*•]\s/) || line.match(/^\d+\./))) {
+        const action = line.replace(/^[-*•\d.]\s*/, '').trim();
+        if (action && actionItems.length < 5) {
+          actionItems.push({
+            id: `action-${actionItems.length + 1}`,
+            title: action.split(':')[0] || action,
+            description: action.split(':').slice(1).join(':').trim() || action,
+            priority: 'medium' as const,
+            category: 'study' as const,
+            estimatedTime: this.estimateTimeFromText(action)
+          });
+        }
+      }
+    }
+    
+    return {
+      message: message || text.slice(0, 500),
+      suggestions,
+      actionItems,
+      confidence: 0.7
+    };
+  }
+
+  /**
+   * Estimate time from action text
+   */
+  private estimateTimeFromText(text: string): number | undefined {
+    const timeMatch = text.match(/(\d+)\s*(min|minute|hour|hr)/i);
+    if (timeMatch) {
+      const num = parseInt(timeMatch[1]);
+      const unit = timeMatch[2].toLowerCase();
+      return unit.startsWith('h') ? num * 60 : num;
+    }
+    
+    // Default estimates based on action type
+    if (text.toLowerCase().includes('review') || text.toLowerCase().includes('read')) {
+      return 15;
+    }
+    if (text.toLowerCase().includes('practice') || text.toLowerCase().includes('exercise')) {
+      return 30;
+    }
+    if (text.toLowerCase().includes('study') || text.toLowerCase().includes('learn')) {
+      return 45;
+    }
+    
+    return undefined;
+  }
   /**
    * Get voice assistance - returns plain text suitable for speech synthesis
    */

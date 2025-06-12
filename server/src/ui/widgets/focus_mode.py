@@ -10,7 +10,7 @@ from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 from PyQt5.QtGui import QFont
 from src.features.focus_mode import FocusMode
 from src.utils.config import Config
-from src.ui.styles import DARK_COLORS
+from src.ui.styles import DARK_COLORS, LIGHT_COLORS
 import datetime
 
 class FocusModeWidget(QWidget):
@@ -22,6 +22,7 @@ class FocusModeWidget(QWidget):
         self.session_timer = QTimer()
         self.session_timer.timeout.connect(self.update_timer)
         self.session_time = 0
+        self.current_theme = "dark"
         self.setup_ui()
         self.setup_styles()
         self.load_blocked_sites()
@@ -265,10 +266,9 @@ class FocusModeWidget(QWidget):
         layout.addLayout(presets_layout)
         
         return frame
-    
     def setup_styles(self):
         """Apply styling to the focus mode widget."""
-        colors = DARK_COLORS
+        colors = DARK_COLORS if self.current_theme == 'dark' else LIGHT_COLORS
 
         self.setStyleSheet(f"""
             QFrame#headerCard, QFrame#controlsCard, QFrame#sitesCard {{
@@ -444,8 +444,12 @@ class FocusModeWidget(QWidget):
                 padding: 8px;
                 border-radius: 6px;
                 background-color: {colors['background']};
-            }}
-        """)
+            }}        """)
+    
+    def update_theme(self, theme):
+        """Update the widget theme."""
+        self.current_theme = theme
+        self.setup_styles()
     
     def load_blocked_sites(self):
         """Load blocked sites from config."""

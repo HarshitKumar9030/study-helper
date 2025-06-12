@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
 from PyQt5.QtGui import QFont
 from src.features.voice_assistant import VoiceAssistant
-from src.ui.styles import DARK_COLORS
+from src.ui.styles import DARK_COLORS, LIGHT_COLORS
 import threading
 
 class VoiceWorkerThread(QThread):
@@ -43,6 +43,7 @@ class VoiceAssistantWidget(QWidget):
         super().__init__()
         self.voice_assistant = VoiceAssistant()
         self.worker_thread = None
+        self.current_theme = "dark"
         self.setup_ui()
         self.setup_styles()
         
@@ -189,7 +190,7 @@ class VoiceAssistantWidget(QWidget):
     
     def setup_styles(self):
         """Apply styling to the voice assistant widget."""
-        colors = DARK_COLORS
+        colors = DARK_COLORS if self.current_theme == 'dark' else LIGHT_COLORS
         
         self.setStyleSheet(f"""
             QFrame#headerCard, QFrame#controlsCard, QFrame#historyCard {{
@@ -304,8 +305,12 @@ class VoiceAssistantWidget(QWidget):
             QListWidget#historyList::item:selected {{
                 background-color: {colors['primary']};
                 color: #FFFFFF;
-            }}
-        """)
+            }}        """)
+    
+    def update_theme(self, theme):
+        """Update the widget theme."""
+        self.current_theme = theme
+        self.setup_styles()
     
     def toggle_listening(self):
         """Toggle voice listening."""

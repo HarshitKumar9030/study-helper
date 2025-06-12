@@ -356,3 +356,164 @@ IndentationError: unexpected indent
 2025-06-07 19:07:06 - core.app - [32mINFO[0m - GUI application started successfully
 2025-06-07 19:07:16 - src.features.chat_assistant - [31mERROR[0m - Cannot connect to AI API
 2025-06-07 19:07:42 - src.features.chat_assistant - [31mERROR[0m - Cannot connect to AI API
+2025-06-07 23:21:41 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 23:21:41 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 23:21:41 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 23:21:41 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 23:21:41 - __main__ - [32mINFO[0m - GUI Mode: True
+2025-06-07 23:21:41 - core.app - [32mINFO[0m - Study Helper v1.0.0 initialized
+2025-06-07 23:21:41 - core.app - [32mINFO[0m - GUI Mode Available: True
+2025-06-07 23:21:41 - src.features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 23:21:43 - core.app - [31mERROR[0m - GUI dependencies not available: cannot import name 'SON' from 'bson' (C:\Users\Harshit\study-helper\server\venv\Lib\site-packages\bson\__init__.py). Please install PyQt5: pip install PyQt5
+2025-06-07 23:21:43 - core.app - [32mINFO[0m - Falling back to console mode...
+2025-06-07 23:21:43 - core.app - [32mINFO[0m - Starting console mode...
+2025-06-07 23:21:43 - features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 23:21:45 - features.voice_assistant - [32mINFO[0m - Microphone initialized
+2025-06-07 23:21:45 - features.voice_assistant - [32mINFO[0m - TTS engine initialized
+2025-06-07 23:21:45 - features.voice_assistant - [32mINFO[0m - Voice Assistant initialized
+2025-06-07 23:21:45 - features.focus_mode - [32mINFO[0m - Focus Mode initialized
+2025-06-07 23:21:45 - features.scheduler - [32mINFO[0m - Loaded 1 tasks
+2025-06-07 23:21:45 - features.scheduler - [32mINFO[0m - Scheduler initialized
+2025-06-07 23:21:45 - features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 23:21:47 - core.app - [32mINFO[0m - Received termination signal. Shutting down...
+2025-06-07 23:21:47 - core.app - [32mINFO[0m - Shutting down Study Helper...
+2025-06-07 23:21:47 - core.app - [32mINFO[0m - Application shutdown complete
+2025-06-07 23:25:21 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 23:25:21 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 23:25:21 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 23:25:21 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 23:25:21 - __main__ - [32mINFO[0m - GUI Mode: True
+2025-06-07 23:25:21 - core.app - [32mINFO[0m - Study Helper v1.0.0 initialized
+2025-06-07 23:25:21 - core.app - [32mINFO[0m - GUI Mode Available: True
+2025-06-07 23:25:22 - src.features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 23:25:22 - core.app - [31mERROR[0m - GUI dependencies not available: No module named 'bson.tz_util'. Please install PyQt5: pip install PyQt5
+2025-06-07 23:25:22 - core.app - [32mINFO[0m - Falling back to console mode...
+2025-06-07 23:25:22 - core.app - [32mINFO[0m - Starting console mode...
+2025-06-07 23:25:22 - features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 23:25:25 - features.voice_assistant - [32mINFO[0m - Microphone initialized
+2025-06-07 23:25:25 - features.voice_assistant - [32mINFO[0m - TTS engine initialized
+2025-06-07 23:25:25 - features.voice_assistant - [32mINFO[0m - Voice Assistant initialized
+2025-06-07 23:25:25 - features.focus_mode - [32mINFO[0m - Focus Mode initialized
+2025-06-07 23:25:25 - features.scheduler - [32mINFO[0m - Loaded 1 tasks
+2025-06-07 23:25:25 - features.scheduler - [32mINFO[0m - Scheduler initialized
+2025-06-07 23:25:25 - features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 23:25:27 - core.app - [32mINFO[0m - Received termination signal. Shutting down...
+2025-06-07 23:25:27 - core.app - [32mINFO[0m - Shutting down Study Helper...
+2025-06-07 23:25:27 - core.app - [32mINFO[0m - Application shutdown complete
+2025-06-07 23:32:21 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 23:32:21 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 23:32:21 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 23:32:21 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 23:32:21 - __main__ - [32mINFO[0m - GUI Mode: True
+2025-06-07 23:32:21 - core.app - [32mINFO[0m - Study Helper v1.0.0 initialized
+2025-06-07 23:32:21 - core.app - [32mINFO[0m - GUI Mode Available: True
+2025-06-07 23:32:22 - src.features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 23:32:23 - src.services.auth_service - [32mINFO[0m - Connected to MongoDB successfully
+2025-06-07 23:32:23 - src.services.auth_service - [32mINFO[0m - Authentication service initialized
+2025-06-07 23:32:24 - src.services.auth_service - [32mINFO[0m - Connected to MongoDB successfully
+2025-06-07 23:32:24 - src.services.auth_service - [32mINFO[0m - Authentication service initialized
+2025-06-07 23:32:35 - src.services.auth_service - [31mERROR[0m - Authentication error: Collection objects do not implement truth value testing or bool(). Please compare with None instead: collection is not None
+2025-06-07 23:32:43 - src.services.auth_service - [31mERROR[0m - Authentication error: Collection objects do not implement truth value testing or bool(). Please compare with None instead: collection is not None
+2025-06-07 23:34:13 - src.features.voice_assistant - [32mINFO[0m - Microphone initialized
+2025-06-07 23:34:13 - src.features.voice_assistant - [32mINFO[0m - TTS engine initialized
+2025-06-07 23:34:13 - src.features.voice_assistant - [32mINFO[0m - Voice Assistant initialized
+2025-06-07 23:34:13 - src.features.focus_mode - [32mINFO[0m - Focus Mode initialized
+2025-06-07 23:34:13 - src.features.scheduler - [32mINFO[0m - Loaded 1 tasks
+2025-06-07 23:34:13 - src.features.scheduler - [32mINFO[0m - Scheduler initialized
+2025-06-07 23:34:14 - src.features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 23:34:14 - core.app - [32mINFO[0m - GUI application started successfully
+2025-06-07 23:35:35 - src.features.chat_assistant - [32mINFO[0m - AI response received for message: hello...
+2025-06-07 23:37:29 - core.app - [32mINFO[0m - Received termination signal. Shutting down...
+2025-06-07 23:37:29 - core.app - [32mINFO[0m - Shutting down Study Helper...
+2025-06-07 23:37:29 - core.app - [32mINFO[0m - Application shutdown complete
+2025-06-07 23:37:33 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 23:37:33 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 23:37:33 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 23:37:33 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 23:37:33 - __main__ - [32mINFO[0m - GUI Mode: True
+2025-06-07 23:37:33 - core.app - [32mINFO[0m - Study Helper v1.0.0 initialized
+2025-06-07 23:37:33 - core.app - [32mINFO[0m - GUI Mode Available: True
+2025-06-07 23:37:33 - src.features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 23:37:34 - src.services.auth_service - [32mINFO[0m - Connected to MongoDB successfully
+2025-06-07 23:37:34 - src.services.auth_service - [32mINFO[0m - Authentication service initialized
+2025-06-07 23:37:34 - src.services.auth_service - [32mINFO[0m - Connected to MongoDB successfully
+2025-06-07 23:37:34 - src.services.auth_service - [32mINFO[0m - Authentication service initialized
+2025-06-07 23:37:50 - src.services.auth_service - [32mINFO[0m - User 'harshitkumar9030@gmail.com' authenticated via MongoDB
+2025-06-07 23:37:54 - src.features.voice_assistant - [32mINFO[0m - Microphone initialized
+2025-06-07 23:37:54 - src.features.voice_assistant - [32mINFO[0m - TTS engine initialized
+2025-06-07 23:37:54 - src.features.voice_assistant - [32mINFO[0m - Voice Assistant initialized
+2025-06-07 23:37:54 - src.features.focus_mode - [32mINFO[0m - Focus Mode initialized
+2025-06-07 23:37:54 - src.features.scheduler - [32mINFO[0m - Loaded 1 tasks
+2025-06-07 23:37:54 - src.features.scheduler - [32mINFO[0m - Scheduler initialized
+2025-06-07 23:37:54 - src.features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 23:37:55 - core.app - [32mINFO[0m - GUI application started successfully
+2025-06-07 23:51:21 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 23:51:21 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 23:51:21 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 23:51:21 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 23:51:21 - __main__ - [32mINFO[0m - GUI Mode: True
+2025-06-07 23:51:21 - core.app - [32mINFO[0m - Study Helper v1.0.0 initialized
+2025-06-07 23:51:21 - core.app - [32mINFO[0m - GUI Mode Available: True
+2025-06-07 23:51:22 - src.features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 23:51:23 - src.services.auth_service - [32mINFO[0m - Connected to MongoDB successfully
+2025-06-07 23:51:23 - src.services.auth_service - [32mINFO[0m - Authentication service initialized
+2025-06-07 23:51:24 - src.services.auth_service - [32mINFO[0m - Connected to MongoDB successfully
+2025-06-07 23:51:24 - src.services.auth_service - [32mINFO[0m - Authentication service initialized
+2025-06-07 23:51:48 - src.services.auth_service - [33mWARNING[0m - Next.js authentication failed: Expecting value: line 1 column 1 (char 0)
+2025-06-07 23:51:48 - src.services.auth_service - [33mWARNING[0m - Local authentication failed: User 'harshitkumar9030@gmail.com' not found
+2025-06-07 23:51:51 - src.services.auth_service - [32mINFO[0m - User 'harshitkumar9030@gmail.com' authenticated via MongoDB
+2025-06-07 23:51:54 - src.features.voice_assistant - [32mINFO[0m - Microphone initialized
+2025-06-07 23:51:54 - src.features.voice_assistant - [32mINFO[0m - TTS engine initialized
+2025-06-07 23:51:54 - src.features.voice_assistant - [32mINFO[0m - Voice Assistant initialized
+2025-06-07 23:51:54 - src.features.focus_mode - [32mINFO[0m - Focus Mode initialized
+2025-06-07 23:51:54 - src.features.scheduler - [32mINFO[0m - Loaded 1 tasks
+2025-06-07 23:51:54 - src.features.scheduler - [32mINFO[0m - Scheduler initialized
+2025-06-07 23:51:54 - src.features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 23:51:55 - core.app - [32mINFO[0m - GUI application started successfully
+2025-06-07 23:55:27 - core.app - [32mINFO[0m - Received termination signal. Shutting down...
+2025-06-07 23:55:27 - core.app - [32mINFO[0m - Shutting down Study Helper...
+2025-06-07 23:55:27 - core.app - [32mINFO[0m - Application shutdown complete
+2025-06-07 23:55:30 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 23:55:30 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 23:55:30 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 23:55:30 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 23:55:30 - __main__ - [32mINFO[0m - GUI Mode: True
+2025-06-07 23:55:30 - core.app - [32mINFO[0m - Study Helper v1.0.0 initialized
+2025-06-07 23:55:30 - core.app - [32mINFO[0m - GUI Mode Available: True
+2025-06-07 23:55:30 - core.app - [31mERROR[0m - GUI startup error: unexpected indent (main_window.py, line 22)
+2025-06-07 23:55:30 - core.app - [31mERROR[0m - Application error: unexpected indent (main_window.py, line 22)
+2025-06-07 23:55:30 - core.app - [32mINFO[0m - Falling back to console mode...
+2025-06-07 23:55:30 - core.app - [32mINFO[0m - Starting console mode...
+2025-06-07 23:55:30 - features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 23:55:32 - features.voice_assistant - [32mINFO[0m - Microphone initialized
+2025-06-07 23:55:33 - features.voice_assistant - [32mINFO[0m - TTS engine initialized
+2025-06-07 23:55:33 - features.voice_assistant - [32mINFO[0m - Voice Assistant initialized
+2025-06-07 23:55:33 - features.focus_mode - [32mINFO[0m - Focus Mode initialized
+2025-06-07 23:55:33 - features.scheduler - [32mINFO[0m - Loaded 1 tasks
+2025-06-07 23:55:33 - features.scheduler - [32mINFO[0m - Scheduler initialized
+2025-06-07 23:55:33 - features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 23:55:34 - core.app - [32mINFO[0m - Received termination signal. Shutting down...
+2025-06-07 23:55:34 - core.app - [32mINFO[0m - Shutting down Study Helper...
+2025-06-07 23:55:34 - core.app - [32mINFO[0m - Application shutdown complete
+2025-06-07 23:57:01 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 23:57:01 - __main__ - [32mINFO[0m - Starting Study Helper Application
+2025-06-07 23:57:01 - __main__ - [32mINFO[0m - ============================================================
+2025-06-07 23:57:01 - __main__ - [32mINFO[0m - Configuration loaded successfully
+2025-06-07 23:57:01 - __main__ - [32mINFO[0m - GUI Mode: True
+2025-06-07 23:57:01 - core.app - [32mINFO[0m - Study Helper v1.0.0 initialized
+2025-06-07 23:57:01 - core.app - [32mINFO[0m - GUI Mode Available: True
+2025-06-07 23:57:01 - core.app - [31mERROR[0m - GUI startup error: unindent does not match any outer indentation level (main_window.py, line 226)
+2025-06-07 23:57:01 - core.app - [31mERROR[0m - Application error: unindent does not match any outer indentation level (main_window.py, line 226)
+2025-06-07 23:57:01 - core.app - [32mINFO[0m - Falling back to console mode...
+2025-06-07 23:57:01 - core.app - [32mINFO[0m - Starting console mode...
+2025-06-07 23:57:01 - features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 23:57:03 - features.voice_assistant - [32mINFO[0m - Microphone initialized
+2025-06-07 23:57:04 - features.voice_assistant - [32mINFO[0m - TTS engine initialized
+2025-06-07 23:57:04 - features.voice_assistant - [32mINFO[0m - Voice Assistant initialized
+2025-06-07 23:57:04 - features.focus_mode - [32mINFO[0m - Focus Mode initialized
+2025-06-07 23:57:04 - features.scheduler - [32mINFO[0m - Loaded 1 tasks
+2025-06-07 23:57:04 - features.scheduler - [32mINFO[0m - Scheduler initialized
+2025-06-07 23:57:04 - features.chat_assistant - [32mINFO[0m - Chat Assistant initialized
+2025-06-07 23:57:04 - core.app - [32mINFO[0m - Received termination signal. Shutting down...
+2025-06-07 23:57:04 - core.app - [32mINFO[0m - Shutting down Study Helper...
+2025-06-07 23:57:04 - core.app - [32mINFO[0m - Application shutdown complete

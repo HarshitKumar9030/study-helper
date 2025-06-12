@@ -80,7 +80,7 @@ export async function PUT(
         if (field === 'dueDate') {
           task[field] = new Date(body[field]);
         } else {
-          task[field] = body[field];
+          (task as any)[field] = body[field];
         }
       }
     });

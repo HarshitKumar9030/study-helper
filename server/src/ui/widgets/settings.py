@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont
 from src.utils.config import Config
-from src.ui.styles import DARK_COLORS
+from src.ui.styles import DARK_COLORS, LIGHT_COLORS
 
 class SettingsWidget(QWidget):
     """Settings interface widget."""
@@ -18,6 +18,7 @@ class SettingsWidget(QWidget):
     
     def __init__(self):
         super().__init__()
+        self.current_theme = "dark"
         self.setup_ui()
         self.setup_styles()
         self.load_settings()
@@ -35,13 +36,11 @@ class SettingsWidget(QWidget):
         # Settings tabs
         self.tabs = QTabWidget()
         self.tabs.setObjectName("settingsTabs")
-        
-        # Add tabs
+          # Add tabs
         self.tabs.addTab(self.create_general_tab(), "⚙️ General")
         self.tabs.addTab(self.create_voice_tab(), "🎤 Voice")
         self.tabs.addTab(self.create_focus_tab(), "🎯 Focus Mode")
         self.tabs.addTab(self.create_appearance_tab(), "🎨 Appearance")
-        self.tabs.addTab(self.create_advanced_tab(), "🔧 Advanced")
         
         layout.addWidget(self.tabs)
         
@@ -650,7 +649,7 @@ class SettingsWidget(QWidget):
     
     def setup_styles(self):
         """Apply styling to the settings widget."""
-        colors = DARK_COLORS
+        colors = DARK_COLORS if self.current_theme == 'dark' else LIGHT_COLORS
         
         self.setStyleSheet(f"""
             QFrame#headerCard {{
@@ -878,8 +877,7 @@ class SettingsWidget(QWidget):
                 color: #FFFFFF;
                 border: none;
                 border-radius: 6px;
-                padding: 8px 16px;
-                font-size: 14px;
+                padding: 8px 16px;            font-size: 14px;
                 font-weight: 500;
             }}
         """)
@@ -891,10 +889,6 @@ class SettingsWidget(QWidget):
             if site.strip():
                 item = QListWidgetItem(site.strip())
                 self.blocked_sites_list.addItem(item)
-        
-        # Load API key if available
-        if Config.GOOGLE_AI_API_KEY:
-            self.api_key_input.setText(Config.GOOGLE_AI_API_KEY)
     
     def save_settings(self):
         """Save current settings."""
@@ -904,3 +898,8 @@ class SettingsWidget(QWidget):
     def refresh(self):
         """Refresh the settings."""
         self.load_settings()
+    
+    def update_theme(self, theme):
+        """Update the widget theme."""
+        self.current_theme = theme
+        self.setup_styles()

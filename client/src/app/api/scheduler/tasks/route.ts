@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectMongo from '@/lib/mongodb';
 import { TaskModel } from '@/lib/models/scheduler';
-import mongoose from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 
 /**
  * GET /api/scheduler/tasks - Get user's tasks
@@ -193,3 +193,5 @@ export async function PUT(request: NextRequest) {
     );
   }
 }
+
+// Define interface for static methods

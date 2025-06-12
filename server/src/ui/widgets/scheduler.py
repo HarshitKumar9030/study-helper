@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QDate, QTime, pyqtSignal
 from PyQt5.QtGui import QFont
 from src.features.scheduler import Scheduler
-from src.ui.styles import DARK_COLORS
+from src.ui.styles import DARK_COLORS, LIGHT_COLORS
 import datetime
 
 class SchedulerWidget(QWidget):
@@ -18,6 +18,7 @@ class SchedulerWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.scheduler = Scheduler()
+        self.current_theme = "dark"
         self.setup_ui()
         self.setup_styles()
         self.load_schedule()
@@ -223,10 +224,9 @@ class SchedulerWidget(QWidget):
         layout.addWidget(self.upcoming_tasks_list)
         
         return frame
-    
     def setup_styles(self):
         """Apply styling to the scheduler widget."""
-        colors = DARK_COLORS
+        colors = DARK_COLORS if self.current_theme == 'dark' else LIGHT_COLORS
         
         self.setStyleSheet(f"""
             QFrame#leftPanel, QFrame#rightPanel {{
@@ -513,7 +513,11 @@ class SchedulerWidget(QWidget):
     def go_to_today(self):
         """Navigate calendar to today."""
         self.calendar.setSelectedDate(QDate.currentDate())
-    
     def refresh(self):
         """Refresh the scheduler data."""
         self.load_schedule()
+    
+    def update_theme(self, theme):
+        """Update the widget theme."""
+        self.current_theme = theme
+        self.setup_styles()

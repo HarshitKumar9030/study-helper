@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QFont
 from src.utils.config import Config
-from src.ui.styles import DARK_COLORS
+from src.ui.styles import DARK_COLORS, LIGHT_COLORS
 import datetime
 
 class DashboardWidget(QWidget):
@@ -17,6 +17,7 @@ class DashboardWidget(QWidget):
     def __init__(self, auth_token=None):
         super().__init__()
         self.auth_token = auth_token
+        self.current_theme = "dark"  # Default theme
         self.setup_ui()
         self.setup_styles()
         self.load_data()
@@ -25,6 +26,11 @@ class DashboardWidget(QWidget):
         self.refresh_timer = QTimer()
         self.refresh_timer.timeout.connect(self.refresh_data)
         self.refresh_timer.start(30000)  # Refresh every 30 seconds
+    
+    def update_theme(self, theme):
+        """Update widget theme."""
+        self.current_theme = theme
+        self.setup_styles()
         
     def setup_ui(self):
         """Setup the user interface."""
@@ -199,7 +205,7 @@ class DashboardWidget(QWidget):
     
     def setup_styles(self):
         """Apply styling to the dashboard."""
-        colors = DARK_COLORS
+        colors = DARK_COLORS if self.current_theme == "dark" else LIGHT_COLORS
         
         self.setStyleSheet(f"""
             QFrame#welcomeCard, QFrame#activityCard {{

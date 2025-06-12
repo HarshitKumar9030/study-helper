@@ -20,6 +20,7 @@ class AuthDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.auth_service = AuthService()
+        self.auth_token = None
         self.setup_ui()
         self.setup_styles()
         
@@ -269,7 +270,6 @@ class AuthDialog(QDialog):
         if not username or not password:
             self.show_status("Please enter both username and password")
             return
-        
         self.login_button.setText("Signing in...")
         self.login_button.setEnabled(False)
         
@@ -279,8 +279,9 @@ class AuthDialog(QDialog):
             
             if success:
                 self.show_status("Login successful!", False)
-                # Emit success signal with a dummy token
-                self.authentication_success.emit("dummy_jwt_token")
+                # Store auth token and emit success signal
+                self.auth_token = "authenticated_user_token"
+                self.authentication_success.emit(self.auth_token)
                 QTimer.singleShot(1000, self.accept)
             else:
                 self.show_status("Invalid username or password")
@@ -291,15 +292,17 @@ class AuthDialog(QDialog):
         finally:
             self.login_button.setText("Sign In")
             self.login_button.setEnabled(True)
-    
     def handle_register(self):
         """Handle registration (placeholder)."""
         self.show_status("Registration feature coming soon!", False)
     
     def handle_guest_mode(self):
+        self.show_status("Registration feature coming soon!", False)
+    def handle_guest_mode(self):
         """Handle guest mode."""
         self.show_status("Continuing as guest...", False)
-        self.authentication_success.emit("guest_mode")
+        self.auth_token = "guest_mode"
+        self.authentication_success.emit(self.auth_token)
         QTimer.singleShot(1000, self.accept)
 
 if __name__ == "__main__":
