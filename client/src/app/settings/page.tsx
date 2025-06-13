@@ -66,7 +66,7 @@ const SettingsPage = () => {
         });
       } finally {
         setIsLoading(false);
-        hasInitialized.current = true; // Mark as initialized to prevent future calls
+        hasInitialized.current = true;
       }
     };
     
@@ -145,7 +145,6 @@ const SettingsPage = () => {
             </p>
           </div>
 
-          {/* API Key Section */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -212,7 +211,6 @@ const SettingsPage = () => {
             </CardContent>
           </Card>
 
-          {/* Voice Assistant Helper */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -222,8 +220,14 @@ const SettingsPage = () => {
               <CardDescription>
                 Download and configure the desktop voice assistant helper application.
               </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">              {/* Download Section */}
+            </CardHeader>            <CardContent className="space-y-6">
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  Download functionality is temporarily disabled. Please check back later or build from source.
+                </AlertDescription>
+              </Alert>
+              
               <div className="space-y-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   {/* Windows */}
@@ -239,12 +243,12 @@ const SettingsPage = () => {
                       <Badge variant="secondary">Installer & Scripts</Badge>
                     </div>                    <Button 
                       className="flex items-center gap-2"
+                      disabled
                       onClick={async () => {
                         try {
                           const response = await fetch('/api/download/voice-assistant?platform=windows');
                           const data = await response.json();
                           
-                          // Show download instructions in a modal or alert
                           alert(`Download Instructions for Windows:\n\n${data.instructions.join('\n')}\n\nSetup Guide:\n${data.setupGuide}`);
                         } catch (error) {
                           toast({
@@ -273,6 +277,7 @@ const SettingsPage = () => {
                       <Badge variant="secondary">Universal Binary</Badge>
                     </div>                    <Button 
                       className="flex items-center gap-2"
+                      disabled
                       onClick={async () => {
                         try {
                           const response = await fetch('/api/download/voice-assistant?platform=macos');
@@ -303,9 +308,9 @@ const SettingsPage = () => {
                         Compatible with Ubuntu, Debian, Fedora
                       </p>
                       <Badge variant="secondary">AppImage & Scripts</Badge>
-                    </div>
-                    <Button 
+                    </div>                    <Button 
                       className="flex items-center gap-2"
+                      disabled
                       onClick={() => {
                         const link = document.createElement('a');
                         link.href = '/api/download/voice-assistant?platform=linux';
@@ -333,7 +338,7 @@ const SettingsPage = () => {
                     <Button 
                       variant="outline"
                       className="flex items-center gap-2"
-                      onClick={() => window.open('https://github.com/your-repo/study-helper-voice-assistant', '_blank')}
+                      onClick={() => window.open('https://github.com/harshitkumar9030/study-helper', '_blank')}
                     >
                       <ExternalLink className="h-4 w-4" />
                       GitHub
