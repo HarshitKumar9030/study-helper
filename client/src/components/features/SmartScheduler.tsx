@@ -117,14 +117,17 @@ export default function SmartScheduler() {
       const response = await fetch("/api/scheduler/tasks");
       if (!response.ok) {
         throw new Error("Failed to fetch tasks");
-      }
-      const data = await response.json();
+      }      const data = await response.json();
+      console.log("Debug - Raw tasks data from API:", data);
+      
       const tasksWithDates = data.tasks.map((task: any) => ({
         ...task,
-        id: task._id,
+        id: task._id, // Ensure id is set to _id
         dueDate: new Date(task.dueDate),
         createdAt: new Date(task.createdAt),
       }));
+      
+      console.log("Debug - Processed tasks:", tasksWithDates);
       setTasks(tasksWithDates);
     } catch (error) {
       console.error("Error fetching tasks:", error);
@@ -249,10 +252,8 @@ export default function SmartScheduler() {
       try {
         const endTime = new Date(
           suggestion.suggestedDate.getTime() + suggestion.duration * 60000
-        );
-
-        const blockData = {
-          taskId: suggestion.task._id || suggestion.task.id,
+        );        const blockData = {
+          taskId: suggestion.task._id || suggestion.task.id, // Use _id (MongoDB ObjectId) for taskId
           title: suggestion.task.title,
           startTime: suggestion.suggestedDate,
           endTime: endTime,
@@ -262,6 +263,23 @@ export default function SmartScheduler() {
           completed: false,
           checkConflicts: !skipConflictCheck, // Allow disabling conflict check
         };
+
+        // Debug logging to track undefined values
+        console.log("Debug - Creating schedule block with data:", {
+          taskId: blockData.taskId,
+          originalTask: suggestion.task,
+          hasTaskId: !!blockData.taskId,
+          taskIdType: typeof blockData.taskId
+        });
+
+        if (!blockData.taskId) {
+          console.error("Task ID is undefined:", {
+            taskId: suggestion.task._id,
+            id: suggestion.task.id,
+            task: suggestion.task
+          });
+          throw new Error("Task ID is missing - cannot create schedule block");
+        }
 
         const response = await fetch("/api/scheduler/blocks", {
           method: "POST",
@@ -328,10 +346,20 @@ export default function SmartScheduler() {
       }
     },
     [session?.user]
-  );
-  const scheduleTask = async (suggestion: ScheduleSuggestion) => {
+  );  const scheduleTask = async (suggestion: ScheduleSuggestion) => {
     const taskId = suggestion.task._id || suggestion.task.id;
-    if (!taskId) return;
+    
+    console.log("Debug - scheduleTask called with:", {
+      taskId,
+      task: suggestion.task,
+      suggestion
+    });
+    
+    if (!taskId) {
+      console.error("No valid task ID found");
+      toast.error("Invalid task - no ID found");
+      return;
+    }
 
     // Prevent duplicate scheduling attempts
     if (schedulingInProgress.has(taskId)) {
@@ -577,9 +605,12 @@ export default function SmartScheduler() {
         0
       ),
     };
-  };
-  const generateSmartSuggestions = () => {
+  };  const generateSmartSuggestions = () => {
     const pendingTasks = tasks.filter((task) => !task.completed);
+    
+    console.log("Debug - All tasks:", tasks);
+    console.log("Debug - Pending tasks:", pendingTasks);
+    
     if (pendingTasks.length === 0) {
       toast.info("No pending tasks to schedule");
       return;
@@ -701,15 +732,19 @@ export default function SmartScheduler() {
         reasoning += `, Due in ${daysUntilDue} days`;
       } else {
         reasoning += `, Due ${format(task.dueDate, "MMM dd")}`;
-      }
-
-      const suggestion: ScheduleSuggestion = {
+      }      const suggestion: ScheduleSuggestion = {
         task,
         suggestedTime: format(availableTime, "MMM dd, HH:mm"),
         suggestedDate: new Date(availableTime),
         duration,
         reasoning,
       };
+
+      console.log("Debug - Created suggestion:", {
+        suggestion,
+        taskId: task._id,
+        taskIdExists: !!task._id
+      });
 
       newSuggestions.push(suggestion);
 

@@ -71,11 +71,20 @@ export async function POST(request: NextRequest) {
       url: uploadResult.secure_url,
       publicId: uploadResult.public_id,
     };
-    await user.save();
-
-    return NextResponse.json({
+    
+    // Also update the image field for NextAuth compatibility
+    user.image = uploadResult.secure_url;
+    await user.save();    return NextResponse.json({
       message: 'Avatar uploaded successfully',
       avatar: user.avatar,
+      image: user.image, // Include this for session updates
+      user: {
+        id: (user._id as any).toString(),
+        name: user.name,
+        email: user.email,
+        image: user.image,
+        avatar: user.avatar
+      }
     });
 
   } catch (error) {
@@ -108,14 +117,20 @@ export async function DELETE(request: NextRequest) {
     }    // Delete avatar from Cloudinary
     if (user.avatar?.publicId) {
       await deleteImage(user.avatar.publicId);
-    }
-
-    // Remove avatar from user
+    }    // Remove avatar from user
     user.avatar = undefined;
+    user.image = undefined; // Also clear the image field for NextAuth
     await user.save();
 
     return NextResponse.json({
       message: 'Avatar deleted successfully',
+      user: {
+        id: (user._id as any).toString(),
+        name: user.name,
+        email: user.email,
+        image: null,
+        avatar: null
+      }
     });
 
   } catch (error) {

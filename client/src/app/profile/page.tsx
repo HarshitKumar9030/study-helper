@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -34,6 +34,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { getOptimizedImageUrl } from '@/lib/cloudinary';
+import { useSessionRefresh } from '@/hooks/use-session-refresh';
 
 interface UserProfile {
   id: string;
@@ -50,6 +51,7 @@ interface UserProfile {
 
 const ProfilePage = () => {
   const { data: session, update: updateSession } = useSession();
+  const { refreshSession } = useSessionRefresh();
   const router = useRouter();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -77,16 +79,7 @@ const ProfilePage = () => {
       .toUpperCase()
       .slice(0, 2);
   };
-
-  useEffect(() => {
-    if (!session) {
-      router.push('/auth/signin');
-      return;
-    }
-    fetchUserProfile();
-  }, [session, router]);
-
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
     try {
       const response = await fetch('/api/profile');
       if (response.ok) {
@@ -109,7 +102,15 @@ const ProfilePage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    if (!session) {
+      router.push('/auth/signin');
+      return;
+    }
+    fetchUserProfile();
+  }, [session, router, fetchUserProfile]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -148,14 +149,16 @@ const ProfilePage = () => {
           currentPassword: '',
           newPassword: '',
           confirmPassword: '',
-        }));
-        toast({
+        }));        toast({
           title: 'Success',
           description: 'Profile updated successfully',
         });
         
-        // Update session with new name
-        await updateSession();
+        // Refresh session with updated data
+        const refreshResult = await refreshSession();
+        if (!refreshResult.success) {
+          console.error('Failed to refresh session after profile update');
+        }
       } else {
         toast({
           title: 'Error',
@@ -186,15 +189,18 @@ const ProfilePage = () => {
         body: formData,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
+      const data = await response.json();      if (response.ok) {
         setUser(prev => prev ? { ...prev, avatar: data.avatar } : null);
         toast({
           title: 'Success',
           description: 'Avatar updated successfully',
         });
-        await updateSession();
+        
+        // Refresh session with fresh data from database
+        const refreshResult = await refreshSession();
+        if (!refreshResult.success) {
+          console.error('Failed to refresh session after avatar upload');
+        }
       } else {
         toast({
           title: 'Error',
@@ -217,15 +223,18 @@ const ProfilePage = () => {
     try {
       const response = await fetch('/api/upload/avatar', {
         method: 'DELETE',
-      });
-
-      if (response.ok) {
+      });      if (response.ok) {
         setUser(prev => prev ? { ...prev, avatar: undefined } : null);
         toast({
           title: 'Success',
           description: 'Avatar deleted successfully',
         });
-        await updateSession();
+        
+        // Refresh session with fresh data from database
+        const refreshResult = await refreshSession();
+        if (!refreshResult.success) {
+          console.error('Failed to refresh session after avatar deletion');
+        }
       } else {
         toast({
           title: 'Error',

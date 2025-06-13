@@ -67,14 +67,13 @@ export async function PUT(request: NextRequest) {
       user.password = hashedPassword;
     }
 
-    await user.save();
-
-    // Return updated user data without password
+    await user.save();    // Return updated user data without password
     const updatedUser = {
       id: user._id,
       name: user.name,
       email: user.email,
       bio: user.bio,
+      image: user.image || user.avatar?.url,
       avatar: user.avatar,
       role: user.role,
       createdAt: user.createdAt,
