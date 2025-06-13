@@ -1,0 +1,15 @@
+# Python dependencies for StudyHelper Voice Assistant Wake Word Detection
+# Enhanced with EVA-style wake word detection for superior accuracy
+
+# Core speech recognition
+vosk>=0.3.45
+
+# Audio processing
+pyaudio>=0.2.11
+
+# Optional: better audio handling
+sounddevice>=0.4.6
+
+# System modules (no need to install explicitly)
+# asyncio - built into Python 3.7+
+# wave - built into Python standard library

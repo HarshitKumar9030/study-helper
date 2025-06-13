@@ -1,0 +1,8 @@
+# Icon File Placeholder
+# You should replace this with an actual icon.ico file
+# For now, the app will use the default system icon
+# To add a custom icon:
+# 1. Create or find a 32x32 pixel .ico file
+# 2. Name it "icon.ico"
+# 3. Place it in the windows folder
+# 4. Make sure it's included in the project as Content with "Copy to Output Directory" set to "PreserveNewest"
