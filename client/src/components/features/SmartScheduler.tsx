@@ -74,7 +74,7 @@ interface ScheduleBlock {
   startTime: Date;
   endTime: Date;
   duration: number;
-  type: 'task' | 'break' | 'meeting' | 'study' | 'other';
+  type: "task" | "break" | "meeting" | "study" | "other";
   priority: "low" | "medium" | "high" | "urgent";
   completed: boolean;
 }
@@ -102,8 +102,12 @@ export default function SmartScheduler() {
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<ScheduleSuggestion[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);  const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [viewMode, setViewMode] = useState<'tasks' | 'schedule'>('tasks');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [schedulingInProgress, setSchedulingInProgress] = useState(
+    new Set<string>()
+  );
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [viewMode, setViewMode] = useState<"tasks" | "schedule">("tasks");
   const [showAllUpcoming, setShowAllUpcoming] = useState(false);
   const fetchTasks = useCallback(async () => {
     if (!session?.user) return;
@@ -238,23 +242,25 @@ export default function SmartScheduler() {
     },
     [session?.user]
   );
-
   const createScheduleBlock = useCallback(
-    async (suggestion: ScheduleSuggestion) => {
+    async (suggestion: ScheduleSuggestion, skipConflictCheck = false) => {
       if (!session?.user) return false;
 
       try {
-        const endTime = new Date(suggestion.suggestedDate.getTime() + suggestion.duration * 60000);
-        
+        const endTime = new Date(
+          suggestion.suggestedDate.getTime() + suggestion.duration * 60000
+        );
+
         const blockData = {
           taskId: suggestion.task._id || suggestion.task.id,
           title: suggestion.task.title,
           startTime: suggestion.suggestedDate,
           endTime: endTime,
           duration: suggestion.duration,
-          type: 'task',
+          type: "task",
           priority: suggestion.task.priority,
           completed: false,
+          checkConflicts: !skipConflictCheck, // Allow disabling conflict check
         };
 
         const response = await fetch("/api/scheduler/blocks", {
@@ -264,57 +270,152 @@ export default function SmartScheduler() {
           },
           body: JSON.stringify(blockData),
         });
-
         if (!response.ok) {
-          throw new Error("Failed to create schedule block");
+          if (response.status === 409) {
+            // Handle conflicts gracefully
+            try {
+              const errorData = await response.json();
+              console.warn("Schedule conflict detected:", {
+                task: suggestion.task.title,
+                suggestedTime: suggestion.suggestedTime,
+                conflicts: errorData.conflicts,
+              });
+              toast.warning(
+                `Schedule conflict for "${suggestion.task.title}". Try a different time slot.`
+              );
+            } catch (jsonError) {
+              console.warn("Failed to parse 409 error response");
+              toast.warning(
+                `Schedule conflict for "${suggestion.task.title}". Try a different time slot.`
+              );
+            }
+            return false;
+          }
+
+          let errorMessage = "Failed to create schedule block";
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.error || errorMessage;
+            console.error("API Error:", {
+              status: response.status,
+              error: errorData,
+              task: suggestion.task.title,
+              requestData: blockData,
+            });
+          } catch (jsonError) {
+            console.error("API Error (failed to parse response):", {
+              status: response.status,
+              statusText: response.statusText,
+              task: suggestion.task.title,
+              requestData: blockData,
+            });
+          }
+
+          throw new Error(errorMessage);
         }
 
         return true;
       } catch (error) {
         console.error("Error creating schedule block:", error);
-        toast.error("Failed to schedule task");
+        if (error instanceof Error && error.message.includes("conflict")) {
+          toast.warning(
+            `"${suggestion.task.title}" conflicts with existing schedule`
+          );
+        } else {
+          toast.error(`Failed to schedule "${suggestion.task.title}"`);
+        }
         return false;
       }
     },
     [session?.user]
   );
   const scheduleTask = async (suggestion: ScheduleSuggestion) => {
-    const success = await createScheduleBlock(suggestion);
-    if (success) {
-      toast.success(`Scheduled "${suggestion.task.title}" for ${suggestion.suggestedTime}`);
-      // Remove the suggestion from the list
-      setSuggestions(prev => prev.filter(s => s.task._id !== suggestion.task._id && s.task.id !== suggestion.task.id));
-      // Refresh schedule blocks to show the new block
-      fetchScheduleBlocks();
+    const taskId = suggestion.task._id || suggestion.task.id;
+    if (!taskId) return;
+
+    // Prevent duplicate scheduling attempts
+    if (schedulingInProgress.has(taskId)) {
+      toast.info("Task is already being scheduled...");
+      return;
+    }
+
+    setSchedulingInProgress((prev) => new Set(prev).add(taskId));
+
+    try {
+      const success = await createScheduleBlock(suggestion);
+      if (success) {
+        toast.success(
+          `Scheduled "${suggestion.task.title}" for ${suggestion.suggestedTime}`
+        );
+        // Remove the suggestion from the list
+        setSuggestions((prev) =>
+          prev.filter(
+            (s) =>
+              s.task._id !== suggestion.task._id &&
+              s.task.id !== suggestion.task.id
+          )
+        );
+        // Refresh schedule blocks to show the new block
+        fetchScheduleBlocks();
+      }
+    } finally {
+      setSchedulingInProgress((prev) => {
+        const next = new Set(prev);
+        next.delete(taskId);
+        return next;
+      });
     }
   };
-
   const scheduleAllSuggestions = async () => {
     if (suggestions.length === 0) return;
-    
+
     setLoading(true);
     let successCount = 0;
-    
+    const failed: ScheduleSuggestion[] = [];
+
+    // Process suggestions sequentially to avoid race conditions
     for (const suggestion of suggestions) {
       const success = await createScheduleBlock(suggestion);
-      if (success) successCount++;
+      if (success) {
+        successCount++;
+        // Remove successful suggestions from state immediately
+        setSuggestions((prev) =>
+          prev.filter(
+            (s) =>
+              s.task._id !== suggestion.task._id &&
+              s.task.id !== suggestion.task.id
+          )
+        );
+        // Small delay to prevent rapid API calls
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      } else {
+        failed.push(suggestion);
+      }
     }
-    
+
     setLoading(false);
-    
+
     if (successCount === suggestions.length) {
       toast.success(`Successfully scheduled all ${successCount} tasks!`);
       setSuggestions([]);
       setShowSuggestions(false);
-      // Refresh schedule blocks to show the new blocks
-      fetchScheduleBlocks();
     } else if (successCount > 0) {
-      toast.success(`Scheduled ${successCount} out of ${suggestions.length} tasks`);
-      // Refresh to show successfully scheduled blocks
-      fetchScheduleBlocks();
+      toast.success(
+        `Scheduled ${successCount} out of ${suggestions.length} tasks`
+      );
+      if (failed.length > 0) {
+        toast.info(
+          `${failed.length} tasks had scheduling conflicts. Try adjusting their times manually.`
+        );
+      }
     } else {
-      toast.error("Failed to schedule tasks");
+      toast.error(
+        "Unable to schedule any tasks due to conflicts. Try generating new suggestions or manual scheduling."
+      );
     }
+
+    // Refresh schedule blocks to show the new blocks
+    fetchScheduleBlocks();
   };
   useEffect(() => {
     setMounted(true);
@@ -326,6 +427,13 @@ export default function SmartScheduler() {
       fetchScheduleBlocks();
     }
   }, [session?.user, fetchTasks, fetchScheduleBlocks]);
+
+  // Cleanup scheduling progress on unmount
+  useEffect(() => {
+    return () => {
+      setSchedulingInProgress(new Set());
+    };
+  }, []);
   const handleAddTask = async (taskData: any) => {
     const createdTask = await createTask(taskData);
     if (createdTask) {
@@ -333,7 +441,8 @@ export default function SmartScheduler() {
       setIsAddTaskOpen(false);
       toast.success("Task added successfully!");
     }
-  };const toggleTaskComplete = async (taskId: string) => {
+  };
+  const toggleTaskComplete = async (taskId: string) => {
     const task = tasks.find((t) => (t.id || t._id) === taskId);
     if (!task) {
       toast.error("Task not found");
@@ -404,7 +513,7 @@ export default function SmartScheduler() {
   const deleteTask = async (taskId: string) => {
     try {
       setLoading(true);
-      
+
       // Find the task to get the correct ID
       const task = tasks.find((t) => (t.id || t._id) === taskId);
       if (!task) {
@@ -435,7 +544,9 @@ export default function SmartScheduler() {
   };
   const getUpcomingTasks = (days = 7) => {
     const today = new Date();
-    const endDate = showAllUpcoming ? addDays(today, 365) : addDays(today, days); // Show all tasks for a year if "View All" is clicked
+    const endDate = showAllUpcoming
+      ? addDays(today, 365)
+      : addDays(today, days); // Show all tasks for a year if "View All" is clicked
 
     return tasks
       .filter(
@@ -455,11 +566,16 @@ export default function SmartScheduler() {
   const getScheduleForDate = (date: Date) => {
     const tasksForDate = getTasksForDate(date);
     const blocksForDate = getScheduleBlocksForDate(date);
-    
+
     return {
       tasks: tasksForDate,
-      blocks: blocksForDate.sort((a, b) => a.startTime.getTime() - b.startTime.getTime()),
-      totalScheduledTime: blocksForDate.reduce((total, block) => total + block.duration, 0)
+      blocks: blocksForDate.sort(
+        (a, b) => a.startTime.getTime() - b.startTime.getTime()
+      ),
+      totalScheduledTime: blocksForDate.reduce(
+        (total, block) => total + block.duration,
+        0
+      ),
     };
   };
   const generateSmartSuggestions = () => {
@@ -473,15 +589,17 @@ export default function SmartScheduler() {
     const sortedTasks = pendingTasks.sort((a, b) => {
       const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
       const now = new Date();
-      
+
       // Calculate urgency score based on due date proximity
       const getUrgencyScore = (task: Task) => {
-        const daysUntilDue = Math.ceil((task.dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const daysUntilDue = Math.ceil(
+          (task.dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+        );
         const priorityScore = priorityOrder[task.priority];
-        
+
         if (daysUntilDue <= 1) return priorityScore + 10; // Very urgent
-        if (daysUntilDue <= 3) return priorityScore + 5;  // Urgent
-        if (daysUntilDue <= 7) return priorityScore + 2;  // Soon
+        if (daysUntilDue <= 3) return priorityScore + 5; // Urgent
+        if (daysUntilDue <= 7) return priorityScore + 2; // Soon
         return priorityScore; // Normal
       };
 
@@ -490,12 +608,12 @@ export default function SmartScheduler() {
 
     const newSuggestions: ScheduleSuggestion[] = [];
     let currentTime = new Date();
-    
+
     // Start scheduling from next available slot (if current time is past work hours, start tomorrow)
     const now = new Date();
     const workStartHour = 9;
     const workEndHour = 18;
-    
+
     if (now.getHours() >= workEndHour) {
       // Start tomorrow
       currentTime = addDays(now, 1);
@@ -511,56 +629,99 @@ export default function SmartScheduler() {
         currentTime.setHours(currentTime.getHours() + 1, 0, 0, 0);
       }
     }
-
     sortedTasks.slice(0, 8).forEach((task, index) => {
       const duration = task.estimatedDuration || 30;
-      
+
       // Skip weekends for work tasks
       while (currentTime.getDay() === 0 || currentTime.getDay() === 6) {
         currentTime = addDays(currentTime, 1);
         currentTime.setHours(workStartHour, 0, 0, 0);
       }
-      
-      // Check if task fits in current day
-      const taskEndTime = new Date(currentTime.getTime() + duration * 60000);
-      if (taskEndTime.getHours() >= workEndHour) {
-        // Move to next day
-        currentTime = addDays(currentTime, 1);
-        currentTime.setHours(workStartHour, 0, 0, 0);
-        
-        // Skip weekends again
-        while (currentTime.getDay() === 0 || currentTime.getDay() === 6) {
-          currentTime = addDays(currentTime, 1);
-          currentTime.setHours(workStartHour, 0, 0, 0);
-        }
-      }
 
-      const daysUntilDue = Math.ceil((task.dueDate.getTime() - currentTime.getTime()) / (1000 * 60 * 60 * 24));
+      // Helper function to check if a time slot conflicts with existing blocks
+      const hasConflict = (startTime: Date, duration: number) => {
+        const endTime = new Date(startTime.getTime() + duration * 60000);
+        return scheduleBlocks.some((block) => {
+          const blockStart = new Date(block.startTime);
+          const blockEnd = new Date(block.endTime);
+          return startTime < blockEnd && endTime > blockStart;
+        });
+      };
+
+      // Helper function to find next available time slot
+      const findNextAvailableSlot = (startTime: Date, duration: number) => {
+        let attempts = 0;
+        let searchTime = new Date(startTime);
+
+        while (attempts < 50) {
+          // Prevent infinite loop
+          if (!hasConflict(searchTime, duration)) {
+            // Check if slot fits within work hours
+            const taskEndTime = new Date(
+              searchTime.getTime() + duration * 60000
+            );
+            if (taskEndTime.getHours() <= workEndHour) {
+              return searchTime;
+            }
+          }
+
+          // Move to next 15-minute slot
+          searchTime = new Date(searchTime.getTime() + 15 * 60000);
+
+          // If past work hours, move to next day
+          if (searchTime.getHours() >= workEndHour) {
+            searchTime = addDays(searchTime, 1);
+            searchTime.setHours(workStartHour, 0, 0, 0);
+
+            // Skip weekends
+            while (searchTime.getDay() === 0 || searchTime.getDay() === 6) {
+              searchTime = addDays(searchTime, 1);
+              searchTime.setHours(workStartHour, 0, 0, 0);
+            }
+          }
+
+          attempts++;
+        }
+
+        return searchTime; // Return last attempt if no perfect slot found
+      };
+
+      // Find next available slot that doesn't conflict
+      const availableTime = findNextAvailableSlot(currentTime, duration);
+
+      const daysUntilDue = Math.ceil(
+        (task.dueDate.getTime() - availableTime.getTime()) /
+          (1000 * 60 * 60 * 24)
+      );
       let reasoning = `Priority: ${task.priority}`;
-      
+
       if (daysUntilDue <= 1) {
-        reasoning += `, ⚠️ Due ${daysUntilDue === 0 ? 'today' : 'tomorrow'}`;
+        reasoning += `, ⚠️ Due ${daysUntilDue === 0 ? "today" : "tomorrow"}`;
       } else if (daysUntilDue <= 7) {
         reasoning += `, Due in ${daysUntilDue} days`;
       } else {
-        reasoning += `, Due ${format(task.dueDate, 'MMM dd')}`;
-      }      const suggestion: ScheduleSuggestion = {
+        reasoning += `, Due ${format(task.dueDate, "MMM dd")}`;
+      }
+
+      const suggestion: ScheduleSuggestion = {
         task,
-        suggestedTime: format(currentTime, "MMM dd, HH:mm"),
-        suggestedDate: new Date(currentTime),
+        suggestedTime: format(availableTime, "MMM dd, HH:mm"),
+        suggestedDate: new Date(availableTime),
         duration,
         reasoning,
       };
 
       newSuggestions.push(suggestion);
-      
-      // Add task duration plus break time (15 minutes)
-      currentTime = new Date(currentTime.getTime() + (duration + 15) * 60000);
+
+      // Update current time to after this suggested slot (plus break time)
+      currentTime = new Date(availableTime.getTime() + (duration + 15) * 60000);
     });
 
     setSuggestions(newSuggestions);
     setShowSuggestions(true);
-    toast.success(`Generated ${newSuggestions.length} smart scheduling suggestions!`);
+    toast.success(
+      `Generated ${newSuggestions.length} smart scheduling suggestions!`
+    );
   };
   const getProductivityStats = () => {
     const total = tasks.length;
@@ -581,7 +742,9 @@ export default function SmartScheduler() {
       <div className="h-full flex items-center justify-center bg-background">
         <div className="text-center">
           <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-lg font-medium text-foreground">Authentication Required</h3>
+          <h3 className="text-lg font-medium text-foreground">
+            Authentication Required
+          </h3>
           <p className="text-muted-foreground">
             Please sign in to access the Smart Scheduler
           </p>
@@ -602,28 +765,29 @@ export default function SmartScheduler() {
           <p className="text-muted-foreground mt-1">
             Intelligent task scheduling with adaptive learning
           </p>
-        </div>        <div className="flex gap-2">
+        </div>{" "}
+        <div className="flex gap-2">
           <div className="flex rounded-lg border border-border p-1">
             <Button
-              variant={viewMode === 'tasks' ? 'default' : 'ghost'}
+              variant={viewMode === "tasks" ? "default" : "ghost"}
               size="sm"
-              onClick={() => setViewMode('tasks')}
+              onClick={() => setViewMode("tasks")}
               className="flex items-center gap-1"
             >
               <CheckCircle2 className="h-4 w-4" />
               Tasks
             </Button>
             <Button
-              variant={viewMode === 'schedule' ? 'default' : 'ghost'}
+              variant={viewMode === "schedule" ? "default" : "ghost"}
               size="sm"
-              onClick={() => setViewMode('schedule')}
+              onClick={() => setViewMode("schedule")}
               className="flex items-center gap-1"
             >
               <CalendarIcon className="h-4 w-4" />
               Schedule
             </Button>
           </div>
-          
+
           <Button
             onClick={generateSmartSuggestions}
             variant="outline"
@@ -633,9 +797,9 @@ export default function SmartScheduler() {
             <Brain className="h-4 w-4" />
             Smart Schedule
           </Button>
-          
-          <Button 
-            className="flex items-center gap-2" 
+
+          <Button
+            className="flex items-center gap-2"
             disabled={loading}
             onClick={() => setIsAddTaskOpen(true)}
           >
@@ -653,59 +817,71 @@ export default function SmartScheduler() {
           />
         </div>
       </div>
-
       {/* Productivity Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Tasks</p>
-                  <p className="text-2xl font-bold text-foreground">{stats.total}</p>
-                </div>
-                <Target className="h-8 w-8 text-blue-600" />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {" "}
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Total Tasks
+                </p>
+                <p className="text-2xl font-bold text-foreground">
+                  {stats.total}
+                </p>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Completed</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {stats.completed}
-                  </p>
-                </div>
-                <CheckCircle2 className="h-8 w-8 text-green-600" />
+              <Target className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Completed
+                </p>
+                <p className="text-2xl font-bold text-green-600">
+                  {stats.completed}
+                </p>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Pending</p>
-                  <p className="text-2xl font-bold text-blue-600">
-                    {stats.pending}
-                  </p>
-                </div>
-                <Clock className="h-8 w-8 text-blue-600" />
+              <CheckCircle2 className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Pending
+                </p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {stats.pending}
+                </p>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Overdue</p>
-                  <p className="text-2xl font-bold text-red-600">
-                    {stats.overdue}
-                  </p>
-                </div>
-                <AlertCircle className="h-8 w-8 text-red-600" />
+              <Clock className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Overdue
+                </p>
+                <p className="text-2xl font-bold text-red-600">
+                  {stats.overdue}
+                </p>
               </div>
-            </CardContent>
-          </Card>
-      </div>      {/* Smart Suggestions */}
+              <AlertCircle className="h-8 w-8 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>{" "}
+      {/* Smart Suggestions */}
       {showSuggestions && suggestions.length > 0 && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
@@ -749,9 +925,14 @@ export default function SmartScheduler() {
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium text-foreground">{suggestion.task.title}</h4>
-                      <Badge className={priorityColors[suggestion.task.priority]}>
-                        {priorityIcons[suggestion.task.priority]} {suggestion.task.priority}
+                      <h4 className="font-medium text-foreground">
+                        {suggestion.task.title}
+                      </h4>
+                      <Badge
+                        className={priorityColors[suggestion.task.priority]}
+                      >
+                        {priorityIcons[suggestion.task.priority]}{" "}
+                        {suggestion.task.priority}
                       </Badge>
                     </div>
                     <p className="text-sm text-muted-foreground mb-2">
@@ -771,16 +952,32 @@ export default function SmartScheduler() {
                       <div className="text-xs text-muted-foreground">
                         {suggestion.duration} minutes
                       </div>
-                    </div>
-                    <Button 
-                      size="sm" 
+                    </div>{" "}
+                    <Button
+                      size="sm"
                       variant="outline"
                       onClick={() => scheduleTask(suggestion)}
-                      disabled={loading}
+                      disabled={
+                        loading ||
+                        schedulingInProgress.has(
+                          suggestion.task._id || suggestion.task.id || ""
+                        )
+                      }
                       className="flex items-center gap-1"
                     >
-                      <CalendarIcon className="h-3 w-3" />
-                      Schedule
+                      {schedulingInProgress.has(
+                        suggestion.task._id || suggestion.task.id || ""
+                      ) ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Scheduling...
+                        </>
+                      ) : (
+                        <>
+                          <CalendarIcon className="h-3 w-3" />
+                          Schedule
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -788,14 +985,15 @@ export default function SmartScheduler() {
             </div>
             <div className="mt-4 p-3 bg-muted/50 rounded-lg">
               <p className="text-xs text-muted-foreground">
-                💡 <strong>Smart Scheduling Tips:</strong> Tasks are scheduled based on priority, due dates, and optimal work hours (9 AM - 6 PM, weekdays only). 
-                Higher priority and closer due dates get earlier time slots.
+                💡 <strong>Smart Scheduling Tips:</strong> Tasks are scheduled
+                based on priority, due dates, and optimal work hours (9 AM - 6
+                PM, weekdays only). Higher priority and closer due dates get
+                earlier time slots.
               </p>
             </div>
           </CardContent>
         </Card>
       )}
-
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Panel - Calendar */}
@@ -812,7 +1010,8 @@ export default function SmartScheduler() {
                   Today
                 </Button>
               </CardTitle>
-            </CardHeader>            <CardContent>
+            </CardHeader>{" "}
+            <CardContent>
               {mounted && (
                 <Calendar
                   mode="single"
@@ -820,14 +1019,15 @@ export default function SmartScheduler() {
                   onSelect={setSelectedDate}
                   className="rounded-md border"
                 />
-              )}              <Separator className="my-4" />
+              )}{" "}
+              <Separator className="my-4" />
               <div className="space-y-3">
                 <h4 className="font-medium">
                   {selectedDate
                     ? format(selectedDate, "MMM dd")
                     : "selected date"}
                 </h4>
-                
+
                 {selectedDate && (
                   <div className="space-y-2">
                     {(() => {
@@ -838,18 +1038,24 @@ export default function SmartScheduler() {
                           {daySchedule.blocks.length > 0 && (
                             <div>
                               <p className="text-xs font-medium text-muted-foreground mb-1">
-                                📅 Scheduled ({daySchedule.totalScheduledTime}m total)
+                                📅 Scheduled ({daySchedule.totalScheduledTime}m
+                                total)
                               </p>
                               <ScrollArea className="h-24">
                                 {daySchedule.blocks.map((block) => (
                                   <div
                                     key={block._id}
                                     className="flex items-center gap-2 py-1 text-xs"
-                                  >                                    <Badge className={priorityColors[block.priority]}>
+                                  >
+                                    {" "}
+                                    <Badge
+                                      className={priorityColors[block.priority]}
+                                    >
                                       {priorityIcons[block.priority]}
                                     </Badge>
                                     <span className="flex-1 truncate">
-                                      {format(block.startTime, "HH:mm")} - {block.title}
+                                      {format(block.startTime, "HH:mm")} -{" "}
+                                      {block.title}
                                     </span>
                                     <span className="text-muted-foreground">
                                       {block.duration}m
@@ -859,7 +1065,7 @@ export default function SmartScheduler() {
                               </ScrollArea>
                             </div>
                           )}
-                          
+
                           {/* Due Tasks */}
                           {daySchedule.tasks.length > 0 && (
                             <div>
@@ -871,12 +1077,18 @@ export default function SmartScheduler() {
                                   <div
                                     key={task._id || task.id}
                                     className="flex items-center gap-2 py-1"
-                                  >                                    <Badge className={priorityColors[task.priority]}>
+                                  >
+                                    {" "}
+                                    <Badge
+                                      className={priorityColors[task.priority]}
+                                    >
                                       {priorityIcons[task.priority]}
                                     </Badge>
                                     <span
                                       className={`text-sm flex-1 truncate ${
-                                        task.completed ? "line-through text-muted-foreground" : "text-foreground"
+                                        task.completed
+                                          ? "line-through text-muted-foreground"
+                                          : "text-foreground"
                                       }`}
                                     >
                                       {task.title}
@@ -886,12 +1098,13 @@ export default function SmartScheduler() {
                               </ScrollArea>
                             </div>
                           )}
-                          
-                          {daySchedule.blocks.length === 0 && daySchedule.tasks.length === 0 && (
-                            <p className="text-sm text-muted-foreground text-center py-4">
-                              No tasks or schedule for this date
-                            </p>
-                          )}
+
+                          {daySchedule.blocks.length === 0 &&
+                            daySchedule.tasks.length === 0 && (
+                              <p className="text-sm text-muted-foreground text-center py-4">
+                                No tasks or schedule for this date
+                              </p>
+                            )}
                         </>
                       );
                     })()}
@@ -900,9 +1113,10 @@ export default function SmartScheduler() {
               </div>
             </CardContent>
           </Card>
-        </div>        {/* Right Panel - Task Lists or Schedule View */}
+        </div>{" "}
+        {/* Right Panel - Task Lists or Schedule View */}
         <div className="lg:col-span-2 space-y-6">
-          {viewMode === 'tasks' ? (
+          {viewMode === "tasks" ? (
             <>
               {/* Today's Tasks */}
               <Card>
@@ -935,7 +1149,9 @@ export default function SmartScheduler() {
                               className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors bg-card"
                             >
                               <button
-                                onClick={() => toggleTaskComplete(task._id || task.id!)}
+                                onClick={() =>
+                                  toggleTaskComplete(task._id || task.id!)
+                                }
                                 className="flex-shrink-0 hover:scale-110 transition-transform"
                                 disabled={loading}
                               >
@@ -961,8 +1177,11 @@ export default function SmartScheduler() {
                                   </p>
                                 )}
                                 <div className="flex items-center gap-2 mt-1">
-                                  <Badge className={priorityColors[task.priority]}>
-                                    {priorityIcons[task.priority]} {task.priority}
+                                  <Badge
+                                    className={priorityColors[task.priority]}
+                                  >
+                                    {priorityIcons[task.priority]}{" "}
+                                    {task.priority}
                                   </Badge>
                                   {task.estimatedDuration && (
                                     <Badge variant="outline">
@@ -970,7 +1189,9 @@ export default function SmartScheduler() {
                                     </Badge>
                                   )}
                                   {task.category && (
-                                    <Badge variant="outline">{task.category}</Badge>
+                                    <Badge variant="outline">
+                                      {task.category}
+                                    </Badge>
                                   )}
                                 </div>
                               </div>
@@ -986,7 +1207,9 @@ export default function SmartScheduler() {
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  onClick={() => deleteTask(task._id || task.id!)}
+                                  onClick={() =>
+                                    deleteTask(task._id || task.id!)
+                                  }
                                   disabled={loading}
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -1002,18 +1225,21 @@ export default function SmartScheduler() {
               </Card>
 
               {/* Upcoming Tasks */}
-              <Card>                <CardHeader>
+              <Card>
+                {" "}
+                <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <span>Upcoming Tasks</span>
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       onClick={() => setShowAllUpcoming(!showAllUpcoming)}
                     >
-                      {showAllUpcoming ? 'Show Less' : 'View All'}
+                      {showAllUpcoming ? "Show Less" : "View All"}
                     </Button>
                   </CardTitle>
-                </CardHeader>                <CardContent>
+                </CardHeader>{" "}
+                <CardContent>
                   <ScrollArea className={showAllUpcoming ? "h-96" : "h-64"}>
                     {getUpcomingTasks().length === 0 ? (
                       <div className="text-center py-8 text-muted-foreground">
@@ -1023,74 +1249,85 @@ export default function SmartScheduler() {
                       </div>
                     ) : (
                       <div className="space-y-3">
-                        {getUpcomingTasks().slice(0, showAllUpcoming ? undefined : 5).map((task) => (
-                          <div
-                            key={task._id || task.id}
-                            className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors bg-card"
-                          >
-                            <button
-                              onClick={() =>
-                                toggleTaskComplete(task._id || task.id!)
-                              }
-                              className="flex-shrink-0 hover:scale-110 transition-transform"
-                              disabled={loading}
+                        {getUpcomingTasks()
+                          .slice(0, showAllUpcoming ? undefined : 5)
+                          .map((task) => (
+                            <div
+                              key={task._id || task.id}
+                              className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors bg-card"
                             >
-                              {task.completed ? (
-                                <CheckCircle2 className="h-5 w-5 text-green-500" />
-                              ) : (
-                                <Circle className="h-5 w-5 text-muted-foreground hover:text-foreground" />
-                              )}
-                            </button>
-                            <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-foreground">{task.title}</h4>
-                              {task.description && (
-                                <p className="text-sm text-muted-foreground truncate">
-                                  {task.description}
-                                </p>
-                              )}
-                              <div className="flex items-center gap-2 mt-1">
-                                <Badge className={priorityColors[task.priority]}>
-                                  {priorityIcons[task.priority]} {task.priority}
-                                </Badge>
-                                <Badge variant="outline">
-                                  Due {format(task.dueDate, "MMM dd")}
-                                </Badge>
-                                {task.estimatedDuration && (
-                                  <Badge variant="outline">
-                                    {task.estimatedDuration}m
+                              <button
+                                onClick={() =>
+                                  toggleTaskComplete(task._id || task.id!)
+                                }
+                                className="flex-shrink-0 hover:scale-110 transition-transform"
+                                disabled={loading}
+                              >
+                                {task.completed ? (
+                                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                ) : (
+                                  <Circle className="h-5 w-5 text-muted-foreground hover:text-foreground" />
+                                )}
+                              </button>
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-medium text-foreground">
+                                  {task.title}
+                                </h4>
+                                {task.description && (
+                                  <p className="text-sm text-muted-foreground truncate">
+                                    {task.description}
+                                  </p>
+                                )}
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Badge
+                                    className={priorityColors[task.priority]}
+                                  >
+                                    {priorityIcons[task.priority]}{" "}
+                                    {task.priority}
                                   </Badge>
-                                )}
-                                {task.category && (
-                                  <Badge variant="outline">{task.category}</Badge>
-                                )}
+                                  <Badge variant="outline">
+                                    Due {format(task.dueDate, "MMM dd")}
+                                  </Badge>
+                                  {task.estimatedDuration && (
+                                    <Badge variant="outline">
+                                      {task.estimatedDuration}m
+                                    </Badge>
+                                  )}
+                                  {task.category && (
+                                    <Badge variant="outline">
+                                      {task.category}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => setEditingTask(task)}
+                                  disabled={loading}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() =>
+                                    deleteTask(task._id || task.id!)
+                                  }
+                                  disabled={loading}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </div>
                             </div>
-                            <div className="flex gap-1">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => setEditingTask(task)}
-                                disabled={loading}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => deleteTask(task._id || task.id!)}
-                                disabled={loading}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
+                          ))}
                         {!showAllUpcoming && getUpcomingTasks().length > 5 && (
                           <div className="text-center py-2 text-sm text-muted-foreground">
-                            {getUpcomingTasks().length - 5} more tasks... 
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
+                            {getUpcomingTasks().length - 5} more tasks...
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               className="ml-2 h-auto p-1 text-xs"
                               onClick={() => setShowAllUpcoming(true)}
                             >
@@ -1111,7 +1348,9 @@ export default function SmartScheduler() {
                 <CardTitle className="flex items-center justify-between">
                   <span>Daily Schedule</span>
                   <span className="text-sm font-normal text-muted-foreground">
-                    {selectedDate ? format(selectedDate, "EEEE, MMMM dd, yyyy") : format(new Date(), "EEEE, MMMM dd, yyyy")}
+                    {selectedDate
+                      ? format(selectedDate, "EEEE, MMMM dd, yyyy")
+                      : format(new Date(), "EEEE, MMMM dd, yyyy")}
                   </span>
                 </CardTitle>
               </CardHeader>
@@ -1120,13 +1359,15 @@ export default function SmartScheduler() {
                   {(() => {
                     const scheduleDate = selectedDate || new Date();
                     const daySchedule = getScheduleForDate(scheduleDate);
-                    
+
                     if (daySchedule.blocks.length === 0) {
                       return (
                         <div className="text-center py-12 text-muted-foreground">
                           <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
                           <p>No scheduled blocks for this day</p>
-                          <p className="text-sm">Use Smart Schedule to create a schedule!</p>
+                          <p className="text-sm">
+                            Use Smart Schedule to create a schedule!
+                          </p>
                         </div>
                       );
                     }
@@ -1138,9 +1379,9 @@ export default function SmartScheduler() {
                           const hour = 9 + i;
                           const timeSlot = new Date(scheduleDate);
                           timeSlot.setHours(hour, 0, 0, 0);
-                          
-                          const blocksInSlot = daySchedule.blocks.filter(block => 
-                            block.startTime.getHours() === hour
+
+                          const blocksInSlot = daySchedule.blocks.filter(
+                            (block) => block.startTime.getHours() === hour
                           );
 
                           return (
@@ -1159,12 +1400,18 @@ export default function SmartScheduler() {
                                         <h4 className="font-medium text-foreground">
                                           {block.title}
                                         </h4>
-                                        <Badge className={priorityColors[block.priority]}>
+                                        <Badge
+                                          className={
+                                            priorityColors[block.priority]
+                                          }
+                                        >
                                           {priorityIcons[block.priority]}
                                         </Badge>
                                       </div>
                                       <p className="text-sm text-muted-foreground">
-                                        {format(block.startTime, "HH:mm")} - {format(block.endTime, "HH:mm")} ({block.duration}m)
+                                        {format(block.startTime, "HH:mm")} -{" "}
+                                        {format(block.endTime, "HH:mm")} (
+                                        {block.duration}m)
                                       </p>
                                     </div>
                                   ))
@@ -1175,10 +1422,12 @@ export default function SmartScheduler() {
                             </div>
                           );
                         })}
-                        
+
                         <div className="mt-4 p-3 bg-muted/50 rounded-lg">
                           <p className="text-sm text-muted-foreground">
-                            📊 <strong>Schedule Summary:</strong> {daySchedule.blocks.length} blocks, {daySchedule.totalScheduledTime} minutes total
+                            📊 <strong>Schedule Summary:</strong>{" "}
+                            {daySchedule.blocks.length} blocks,{" "}
+                            {daySchedule.totalScheduledTime} minutes total
                           </p>
                         </div>
                       </div>
