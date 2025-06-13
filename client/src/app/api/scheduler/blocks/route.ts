@@ -117,7 +117,8 @@ export async function POST(request: NextRequest) {
           { status: 409 }
         );
       }
-    }
+    }    // Calculate duration if not provided
+    const duration = body.duration || Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
 
     // Generate unique block ID
     const blockId = `block_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -128,6 +129,7 @@ export async function POST(request: NextRequest) {
       title: body.title,
       startTime,
       endTime,
+      duration,
       type: body.type || 'other',
       description: body.description,
       location: body.location,
@@ -135,7 +137,8 @@ export async function POST(request: NextRequest) {
       isRecurring: body.isRecurring || false,
       recurringPattern: body.recurringPattern,
       color: body.color,
-      priority: body.priority || 'medium'
+      priority: body.priority || 'medium',
+      completed: body.completed || false
     });
 
     await block.save();

@@ -62,8 +62,21 @@ interface Task {
 interface ScheduleSuggestion {
   task: Task;
   suggestedTime: string;
+  suggestedDate: Date;
   duration: number;
   reasoning: string;
+}
+
+interface ScheduleBlock {
+  _id?: string;
+  taskId: string;
+  title: string;
+  startTime: Date;
+  endTime: Date;
+  duration: number;
+  type: 'task' | 'break' | 'meeting' | 'study' | 'other';
+  priority: "low" | "medium" | "high" | "urgent";
+  completed: boolean;
 }
 
 const priorityColors = {
@@ -83,13 +96,15 @@ const priorityIcons = {
 export default function SmartScheduler() {
   const { data: session } = useSession();
   const [mounted, setMounted] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);const [tasks, setTasks] = useState<Task[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([]);
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState<ScheduleSuggestion[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-
+  const [showSuggestions, setShowSuggestions] = useState(false);  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [viewMode, setViewMode] = useState<'tasks' | 'schedule'>('tasks');
+  const [showAllUpcoming, setShowAllUpcoming] = useState(false);
   const fetchTasks = useCallback(async () => {
     if (!session?.user) return;
 
@@ -112,6 +127,27 @@ export default function SmartScheduler() {
       toast.error("Failed to load tasks");
     } finally {
       setLoading(false);
+    }
+  }, [session?.user]);
+
+  const fetchScheduleBlocks = useCallback(async () => {
+    if (!session?.user) return;
+
+    try {
+      const response = await fetch("/api/scheduler/blocks");
+      if (!response.ok) {
+        throw new Error("Failed to fetch schedule blocks");
+      }
+      const data = await response.json();
+      const blocksWithDates = data.blocks.map((block: any) => ({
+        ...block,
+        startTime: new Date(block.startTime),
+        endTime: new Date(block.endTime),
+      }));
+      setScheduleBlocks(blocksWithDates);
+    } catch (error) {
+      console.error("Error fetching schedule blocks:", error);
+      // Don't show error toast as this might be expected if blocks API doesn't exist yet
     }
   }, [session?.user]);
 
@@ -180,7 +216,6 @@ export default function SmartScheduler() {
     },
     [session?.user]
   );
-
   const deleteTaskFromAPI = useCallback(
     async (taskId: string) => {
       if (!session?.user) return false;
@@ -203,16 +238,94 @@ export default function SmartScheduler() {
     },
     [session?.user]
   );
+
+  const createScheduleBlock = useCallback(
+    async (suggestion: ScheduleSuggestion) => {
+      if (!session?.user) return false;
+
+      try {
+        const endTime = new Date(suggestion.suggestedDate.getTime() + suggestion.duration * 60000);
+        
+        const blockData = {
+          taskId: suggestion.task._id || suggestion.task.id,
+          title: suggestion.task.title,
+          startTime: suggestion.suggestedDate,
+          endTime: endTime,
+          duration: suggestion.duration,
+          type: 'task',
+          priority: suggestion.task.priority,
+          completed: false,
+        };
+
+        const response = await fetch("/api/scheduler/blocks", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(blockData),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to create schedule block");
+        }
+
+        return true;
+      } catch (error) {
+        console.error("Error creating schedule block:", error);
+        toast.error("Failed to schedule task");
+        return false;
+      }
+    },
+    [session?.user]
+  );
+  const scheduleTask = async (suggestion: ScheduleSuggestion) => {
+    const success = await createScheduleBlock(suggestion);
+    if (success) {
+      toast.success(`Scheduled "${suggestion.task.title}" for ${suggestion.suggestedTime}`);
+      // Remove the suggestion from the list
+      setSuggestions(prev => prev.filter(s => s.task._id !== suggestion.task._id && s.task.id !== suggestion.task.id));
+      // Refresh schedule blocks to show the new block
+      fetchScheduleBlocks();
+    }
+  };
+
+  const scheduleAllSuggestions = async () => {
+    if (suggestions.length === 0) return;
+    
+    setLoading(true);
+    let successCount = 0;
+    
+    for (const suggestion of suggestions) {
+      const success = await createScheduleBlock(suggestion);
+      if (success) successCount++;
+    }
+    
+    setLoading(false);
+    
+    if (successCount === suggestions.length) {
+      toast.success(`Successfully scheduled all ${successCount} tasks!`);
+      setSuggestions([]);
+      setShowSuggestions(false);
+      // Refresh schedule blocks to show the new blocks
+      fetchScheduleBlocks();
+    } else if (successCount > 0) {
+      toast.success(`Scheduled ${successCount} out of ${suggestions.length} tasks`);
+      // Refresh to show successfully scheduled blocks
+      fetchScheduleBlocks();
+    } else {
+      toast.error("Failed to schedule tasks");
+    }
+  };
   useEffect(() => {
     setMounted(true);
     setSelectedDate(new Date());
   }, []);
-
   useEffect(() => {
     if (session?.user) {
       fetchTasks();
+      fetchScheduleBlocks();
     }
-  }, [session?.user, fetchTasks]);
+  }, [session?.user, fetchTasks, fetchScheduleBlocks]);
   const handleAddTask = async (taskData: any) => {
     const createdTask = await createTask(taskData);
     if (createdTask) {
@@ -320,10 +433,9 @@ export default function SmartScheduler() {
   const getTodayTasks = () => {
     return tasks.filter((task) => isToday(task.dueDate));
   };
-
   const getUpcomingTasks = (days = 7) => {
     const today = new Date();
-    const endDate = addDays(today, days);
+    const endDate = showAllUpcoming ? addDays(today, 365) : addDays(today, days); // Show all tasks for a year if "View All" is clicked
 
     return tasks
       .filter(
@@ -332,11 +444,24 @@ export default function SmartScheduler() {
       )
       .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
   };
-
   const getTasksForDate = (date: Date) => {
     return tasks.filter((task) => isSameDay(task.dueDate, date));
   };
 
+  const getScheduleBlocksForDate = (date: Date) => {
+    return scheduleBlocks.filter((block) => isSameDay(block.startTime, date));
+  };
+
+  const getScheduleForDate = (date: Date) => {
+    const tasksForDate = getTasksForDate(date);
+    const blocksForDate = getScheduleBlocksForDate(date);
+    
+    return {
+      tasks: tasksForDate,
+      blocks: blocksForDate.sort((a, b) => a.startTime.getTime() - b.startTime.getTime()),
+      totalScheduledTime: blocksForDate.reduce((total, block) => total + block.duration, 0)
+    };
+  };
   const generateSmartSuggestions = () => {
     const pendingTasks = tasks.filter((task) => !task.completed);
     if (pendingTasks.length === 0) {
@@ -344,39 +469,98 @@ export default function SmartScheduler() {
       return;
     }
 
-    // Sort by priority and due date
+    // Sort by priority and due date with urgency score
     const sortedTasks = pendingTasks.sort((a, b) => {
-      const priorityOrder = { urgent: 0, high: 1, medium: 2, low: 3 };
-      const priorityDiff =
-        priorityOrder[a.priority] - priorityOrder[b.priority];
-      if (priorityDiff !== 0) return priorityDiff;
-      return a.dueDate.getTime() - b.dueDate.getTime();
+      const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 };
+      const now = new Date();
+      
+      // Calculate urgency score based on due date proximity
+      const getUrgencyScore = (task: Task) => {
+        const daysUntilDue = Math.ceil((task.dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        const priorityScore = priorityOrder[task.priority];
+        
+        if (daysUntilDue <= 1) return priorityScore + 10; // Very urgent
+        if (daysUntilDue <= 3) return priorityScore + 5;  // Urgent
+        if (daysUntilDue <= 7) return priorityScore + 2;  // Soon
+        return priorityScore; // Normal
+      };
+
+      return getUrgencyScore(b) - getUrgencyScore(a);
     });
 
     const newSuggestions: ScheduleSuggestion[] = [];
     let currentTime = new Date();
-    currentTime.setHours(9, 0, 0, 0); // Start at 9 AM
+    
+    // Start scheduling from next available slot (if current time is past work hours, start tomorrow)
+    const now = new Date();
+    const workStartHour = 9;
+    const workEndHour = 18;
+    
+    if (now.getHours() >= workEndHour) {
+      // Start tomorrow
+      currentTime = addDays(now, 1);
+      currentTime.setHours(workStartHour, 0, 0, 0);
+    } else if (now.getHours() < workStartHour) {
+      // Start today at work hours
+      currentTime.setHours(workStartHour, 0, 0, 0);
+    } else {
+      // Start from current time, rounded to next 15-minute interval
+      const minutes = Math.ceil(now.getMinutes() / 15) * 15;
+      currentTime.setMinutes(minutes, 0, 0);
+      if (minutes >= 60) {
+        currentTime.setHours(currentTime.getHours() + 1, 0, 0, 0);
+      }
+    }
 
-    sortedTasks.slice(0, 5).forEach((task) => {
+    sortedTasks.slice(0, 8).forEach((task, index) => {
       const duration = task.estimatedDuration || 30;
-      const suggestion: ScheduleSuggestion = {
+      
+      // Skip weekends for work tasks
+      while (currentTime.getDay() === 0 || currentTime.getDay() === 6) {
+        currentTime = addDays(currentTime, 1);
+        currentTime.setHours(workStartHour, 0, 0, 0);
+      }
+      
+      // Check if task fits in current day
+      const taskEndTime = new Date(currentTime.getTime() + duration * 60000);
+      if (taskEndTime.getHours() >= workEndHour) {
+        // Move to next day
+        currentTime = addDays(currentTime, 1);
+        currentTime.setHours(workStartHour, 0, 0, 0);
+        
+        // Skip weekends again
+        while (currentTime.getDay() === 0 || currentTime.getDay() === 6) {
+          currentTime = addDays(currentTime, 1);
+          currentTime.setHours(workStartHour, 0, 0, 0);
+        }
+      }
+
+      const daysUntilDue = Math.ceil((task.dueDate.getTime() - currentTime.getTime()) / (1000 * 60 * 60 * 24));
+      let reasoning = `Priority: ${task.priority}`;
+      
+      if (daysUntilDue <= 1) {
+        reasoning += `, ⚠️ Due ${daysUntilDue === 0 ? 'today' : 'tomorrow'}`;
+      } else if (daysUntilDue <= 7) {
+        reasoning += `, Due in ${daysUntilDue} days`;
+      } else {
+        reasoning += `, Due ${format(task.dueDate, 'MMM dd')}`;
+      }      const suggestion: ScheduleSuggestion = {
         task,
-        suggestedTime: format(currentTime, "HH:mm"),
+        suggestedTime: format(currentTime, "MMM dd, HH:mm"),
+        suggestedDate: new Date(currentTime),
         duration,
-        reasoning: `Priority: ${task.priority}, Due: ${format(
-          task.dueDate,
-          "MMM dd"
-        )}`,
+        reasoning,
       };
 
       newSuggestions.push(suggestion);
-      currentTime = addDays(currentTime, 0);
-      currentTime.setMinutes(currentTime.getMinutes() + duration + 15); // Add break
+      
+      // Add task duration plus break time (15 minutes)
+      currentTime = new Date(currentTime.getTime() + (duration + 15) * 60000);
     });
 
     setSuggestions(newSuggestions);
     setShowSuggestions(true);
-    toast.success("Smart schedule generated!");
+    toast.success(`Generated ${newSuggestions.length} smart scheduling suggestions!`);
   };
   const getProductivityStats = () => {
     const total = tasks.length;
@@ -418,7 +602,28 @@ export default function SmartScheduler() {
           <p className="text-muted-foreground mt-1">
             Intelligent task scheduling with adaptive learning
           </p>
-        </div><div className="flex gap-2">
+        </div>        <div className="flex gap-2">
+          <div className="flex rounded-lg border border-border p-1">
+            <Button
+              variant={viewMode === 'tasks' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('tasks')}
+              className="flex items-center gap-1"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Tasks
+            </Button>
+            <Button
+              variant={viewMode === 'schedule' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('schedule')}
+              className="flex items-center gap-1"
+            >
+              <CalendarIcon className="h-4 w-4" />
+              Schedule
+            </Button>
+          </div>
+          
           <Button
             onClick={generateSmartSuggestions}
             variant="outline"
@@ -500,45 +705,92 @@ export default function SmartScheduler() {
               </div>
             </CardContent>
           </Card>
-      </div>
-
-      {/* Smart Suggestions */}
+      </div>      {/* Smart Suggestions */}
       {showSuggestions && suggestions.length > 0 && (
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="flex items-center gap-2">
               <Brain className="h-5 w-5" />
               Smart Schedule Suggestions
+              <Badge variant="outline" className="ml-2">
+                {suggestions.length} tasks
+              </Badge>
             </CardTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowSuggestions(false)}
-            >
-              Dismiss
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="default"
+                size="sm"
+                onClick={scheduleAllSuggestions}
+                disabled={loading}
+                className="flex items-center gap-1"
+              >
+                {loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CalendarIcon className="h-4 w-4" />
+                )}
+                Schedule All
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSuggestions(false)}
+              >
+                Dismiss
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {suggestions.map((suggestion, index) => (                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 border border-border rounded-lg bg-card hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex-1">
+              {suggestions.map((suggestion, index) => (
+                <div
+                  key={`${suggestion.task._id || suggestion.task.id}-${index}`}
+                  className="flex items-center justify-between p-4 border border-border rounded-lg bg-card hover:bg-accent/50 transition-colors"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-medium text-foreground">{suggestion.task.title}</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {suggestion.reasoning}
-                      </p>
+                      <Badge className={priorityColors[suggestion.task.priority]}>
+                        {priorityIcons[suggestion.task.priority]} {suggestion.task.priority}
+                      </Badge>
                     </div>
-                  <div className="flex items-center gap-4">
-                    <Badge variant="outline">{suggestion.suggestedTime}</Badge>
-                    <Badge variant="outline">{suggestion.duration}m</Badge>
-                    <Button size="sm" variant="outline">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {suggestion.reasoning}
+                    </p>
+                    {suggestion.task.description && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        {suggestion.task.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-foreground">
+                        {suggestion.suggestedTime}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {suggestion.duration} minutes
+                      </div>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => scheduleTask(suggestion)}
+                      disabled={loading}
+                      className="flex items-center gap-1"
+                    >
+                      <CalendarIcon className="h-3 w-3" />
                       Schedule
                     </Button>
                   </div>
                 </div>
               ))}
+            </div>
+            <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+              <p className="text-xs text-muted-foreground">
+                💡 <strong>Smart Scheduling Tips:</strong> Tasks are scheduled based on priority, due dates, and optimal work hours (9 AM - 6 PM, weekdays only). 
+                Higher priority and closer due dates get earlier time slots.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -568,227 +820,374 @@ export default function SmartScheduler() {
                   onSelect={setSelectedDate}
                   className="rounded-md border"
                 />
-              )}
-              <Separator className="my-4" />
-              <div className="space-y-2">
+              )}              <Separator className="my-4" />
+              <div className="space-y-3">
                 <h4 className="font-medium">
-                  Tasks for{" "}
                   {selectedDate
                     ? format(selectedDate, "MMM dd")
                     : "selected date"}
-                </h4>                <ScrollArea className="h-32">
-                  {selectedDate &&
-                  getTasksForDate(selectedDate).length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      No tasks for this date
-                    </p>
-                  ) : (
-                    selectedDate &&
-                    getTasksForDate(selectedDate).map((task) => (
-                      <div
-                        key={task._id || task.id}
-                        className="flex items-center gap-2 py-1"
-                      >
-                        <Badge className={priorityColors[task.priority]}>
-                          {priorityIcons[task.priority]}
-                        </Badge>
-                        <span
-                          className={`text-sm ${
-                            task.completed ? "line-through text-muted-foreground" : "text-foreground"
-                          }`}
-                        >
-                          {task.title}
-                        </span>
-                      </div>
-                    ))
-                  )}
-                </ScrollArea>
+                </h4>
+                
+                {selectedDate && (
+                  <div className="space-y-2">
+                    {(() => {
+                      const daySchedule = getScheduleForDate(selectedDate);
+                      return (
+                        <>
+                          {/* Schedule Blocks */}
+                          {daySchedule.blocks.length > 0 && (
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-1">
+                                📅 Scheduled ({daySchedule.totalScheduledTime}m total)
+                              </p>
+                              <ScrollArea className="h-24">
+                                {daySchedule.blocks.map((block) => (
+                                  <div
+                                    key={block._id}
+                                    className="flex items-center gap-2 py-1 text-xs"
+                                  >                                    <Badge className={priorityColors[block.priority]}>
+                                      {priorityIcons[block.priority]}
+                                    </Badge>
+                                    <span className="flex-1 truncate">
+                                      {format(block.startTime, "HH:mm")} - {block.title}
+                                    </span>
+                                    <span className="text-muted-foreground">
+                                      {block.duration}m
+                                    </span>
+                                  </div>
+                                ))}
+                              </ScrollArea>
+                            </div>
+                          )}
+                          
+                          {/* Due Tasks */}
+                          {daySchedule.tasks.length > 0 && (
+                            <div>
+                              <p className="text-xs font-medium text-muted-foreground mb-1">
+                                📋 Due Tasks
+                              </p>
+                              <ScrollArea className="h-24">
+                                {daySchedule.tasks.map((task) => (
+                                  <div
+                                    key={task._id || task.id}
+                                    className="flex items-center gap-2 py-1"
+                                  >                                    <Badge className={priorityColors[task.priority]}>
+                                      {priorityIcons[task.priority]}
+                                    </Badge>
+                                    <span
+                                      className={`text-sm flex-1 truncate ${
+                                        task.completed ? "line-through text-muted-foreground" : "text-foreground"
+                                      }`}
+                                    >
+                                      {task.title}
+                                    </span>
+                                  </div>
+                                ))}
+                              </ScrollArea>
+                            </div>
+                          )}
+                          
+                          {daySchedule.blocks.length === 0 && daySchedule.tasks.length === 0 && (
+                            <p className="text-sm text-muted-foreground text-center py-4">
+                              No tasks or schedule for this date
+                            </p>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Right Panel - Task Lists */}
+        </div>        {/* Right Panel - Task Lists or Schedule View */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Today's Tasks */}
-          <Card>
-            <CardHeader>              <CardTitle className="flex items-center justify-between">
-                <span>Today&apos;s Schedule</span>
-                <span className="text-sm font-normal text-muted-foreground">
-                  {format(new Date(), "EEEE, MMMM dd, yyyy")}
-                </span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                </div>
-              ) : (
-                <ScrollArea className="h-64">                  {getTodayTasks().length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>No tasks scheduled for today</p>
-                      <p className="text-sm">Add a task to get started!</p>
+          {viewMode === 'tasks' ? (
+            <>
+              {/* Today's Tasks */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Today&apos;s Schedule</span>
+                    <span className="text-sm font-normal text-muted-foreground">
+                      {format(new Date(), "EEEE, MMMM dd, yyyy")}
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {loading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
                   ) : (
-                    <div className="space-y-3">
-                      {getTodayTasks().map((task) => (                        <div
-                          key={task._id || task.id}
-                          className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors bg-card"
-                        >
-                          <button
-                            onClick={() => toggleTaskComplete(task._id || task.id!)}
-                            className="flex-shrink-0 hover:scale-110 transition-transform"
-                            disabled={loading}
-                          >
-                            {task.completed ? (
-                              <CheckCircle2 className="h-5 w-5 text-green-500" />
-                            ) : (
-                              <Circle className="h-5 w-5 text-muted-foreground hover:text-foreground" />
-                            )}
-                          </button>
-                          <div className="flex-1 min-w-0">
-                            <h4
-                              className={`font-medium ${
-                                task.completed
-                                  ? "line-through text-muted-foreground"
-                                  : "text-foreground"
-                              }`}
+                    <ScrollArea className="h-64">
+                      {getTodayTasks().length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                          <p>No tasks scheduled for today</p>
+                          <p className="text-sm">Add a task to get started!</p>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {getTodayTasks().map((task) => (
+                            <div
+                              key={task._id || task.id}
+                              className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors bg-card"
                             >
-                              {task.title}
-                            </h4>
-                            {task.description && (
-                              <p className="text-sm text-muted-foreground truncate">
-                                {task.description}
-                              </p>
-                            )}
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge className={priorityColors[task.priority]}>
-                                {priorityIcons[task.priority]} {task.priority}
-                              </Badge>
-                              {task.estimatedDuration && (
-                                <Badge variant="outline">
-                                  {task.estimatedDuration}m
+                              <button
+                                onClick={() => toggleTaskComplete(task._id || task.id!)}
+                                className="flex-shrink-0 hover:scale-110 transition-transform"
+                                disabled={loading}
+                              >
+                                {task.completed ? (
+                                  <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                ) : (
+                                  <Circle className="h-5 w-5 text-muted-foreground hover:text-foreground" />
+                                )}
+                              </button>
+                              <div className="flex-1 min-w-0">
+                                <h4
+                                  className={`font-medium ${
+                                    task.completed
+                                      ? "line-through text-muted-foreground"
+                                      : "text-foreground"
+                                  }`}
+                                >
+                                  {task.title}
+                                </h4>
+                                {task.description && (
+                                  <p className="text-sm text-muted-foreground truncate">
+                                    {task.description}
+                                  </p>
+                                )}
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Badge className={priorityColors[task.priority]}>
+                                    {priorityIcons[task.priority]} {task.priority}
+                                  </Badge>
+                                  {task.estimatedDuration && (
+                                    <Badge variant="outline">
+                                      {task.estimatedDuration}m
+                                    </Badge>
+                                  )}
+                                  {task.category && (
+                                    <Badge variant="outline">{task.category}</Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex gap-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => setEditingTask(task)}
+                                  disabled={loading}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => deleteTask(task._id || task.id!)}
+                                  disabled={loading}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </ScrollArea>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Upcoming Tasks */}
+              <Card>                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Upcoming Tasks</span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => setShowAllUpcoming(!showAllUpcoming)}
+                    >
+                      {showAllUpcoming ? 'Show Less' : 'View All'}
+                    </Button>
+                  </CardTitle>
+                </CardHeader>                <CardContent>
+                  <ScrollArea className={showAllUpcoming ? "h-96" : "h-64"}>
+                    {getUpcomingTasks().length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                        <p>No upcoming tasks</p>
+                        <p className="text-sm">You&apos;re all caught up!</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {getUpcomingTasks().slice(0, showAllUpcoming ? undefined : 5).map((task) => (
+                          <div
+                            key={task._id || task.id}
+                            className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors bg-card"
+                          >
+                            <button
+                              onClick={() =>
+                                toggleTaskComplete(task._id || task.id!)
+                              }
+                              className="flex-shrink-0 hover:scale-110 transition-transform"
+                              disabled={loading}
+                            >
+                              {task.completed ? (
+                                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                              ) : (
+                                <Circle className="h-5 w-5 text-muted-foreground hover:text-foreground" />
+                              )}
+                            </button>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-foreground">{task.title}</h4>
+                              {task.description && (
+                                <p className="text-sm text-muted-foreground truncate">
+                                  {task.description}
+                                </p>
+                              )}
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge className={priorityColors[task.priority]}>
+                                  {priorityIcons[task.priority]} {task.priority}
                                 </Badge>
-                              )}
-                              {task.category && (
-                                <Badge variant="outline">{task.category}</Badge>
-                              )}
+                                <Badge variant="outline">
+                                  Due {format(task.dueDate, "MMM dd")}
+                                </Badge>
+                                {task.estimatedDuration && (
+                                  <Badge variant="outline">
+                                    {task.estimatedDuration}m
+                                  </Badge>
+                                )}
+                                {task.category && (
+                                  <Badge variant="outline">{task.category}</Badge>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setEditingTask(task)}
+                                disabled={loading}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => deleteTask(task._id || task.id!)}
+                                disabled={loading}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex gap-1">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => setEditingTask(task)}
-                              disabled={loading}
+                        ))}
+                        {!showAllUpcoming && getUpcomingTasks().length > 5 && (
+                          <div className="text-center py-2 text-sm text-muted-foreground">
+                            {getUpcomingTasks().length - 5} more tasks... 
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="ml-2 h-auto p-1 text-xs"
+                              onClick={() => setShowAllUpcoming(true)}
                             >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => deleteTask(task._id || task.id!)}
-                              disabled={loading}
-                            >
-                              <Trash2 className="h-4 w-4" />
+                              Show All
                             </Button>
                           </div>
+                        )}
+                      </div>
+                    )}
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            /* Schedule View */
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Daily Schedule</span>
+                  <span className="text-sm font-normal text-muted-foreground">
+                    {selectedDate ? format(selectedDate, "EEEE, MMMM dd, yyyy") : format(new Date(), "EEEE, MMMM dd, yyyy")}
+                  </span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-96">
+                  {(() => {
+                    const scheduleDate = selectedDate || new Date();
+                    const daySchedule = getScheduleForDate(scheduleDate);
+                    
+                    if (daySchedule.blocks.length === 0) {
+                      return (
+                        <div className="text-center py-12 text-muted-foreground">
+                          <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                          <p>No scheduled blocks for this day</p>
+                          <p className="text-sm">Use Smart Schedule to create a schedule!</p>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </ScrollArea>
-              )}
-            </CardContent>
-          </Card>
+                      );
+                    }
 
-          {/* Upcoming Tasks */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Upcoming Tasks</span>
-                <Button variant="ghost" size="sm">
-                  View All
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>              <ScrollArea className="h-64">
-                {getUpcomingTasks().length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No upcoming tasks</p>
-                    <p className="text-sm">You&apos;re all caught up!</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {getUpcomingTasks().map((task) => (                      <div
-                        key={task._id || task.id}
-                        className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors bg-card"
-                      >
-                        <button
-                          onClick={() =>
-                            toggleTaskComplete(task._id || task.id!)
-                          }
-                          className="flex-shrink-0 hover:scale-110 transition-transform"
-                          disabled={loading}
-                        >
-                          {task.completed ? (
-                            <CheckCircle2 className="h-5 w-5 text-green-500" />
-                          ) : (
-                            <Circle className="h-5 w-5 text-muted-foreground hover:text-foreground" />
-                          )}
-                        </button>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-foreground">{task.title}</h4>
-                          {task.description && (
-                            <p className="text-sm text-muted-foreground truncate">
-                              {task.description}
-                            </p>
-                          )}
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge className={priorityColors[task.priority]}>
-                              {priorityIcons[task.priority]} {task.priority}
-                            </Badge>
-                            <Badge variant="outline">
-                              Due {format(task.dueDate, "MMM dd")}
-                            </Badge>
-                            {task.estimatedDuration && (
-                              <Badge variant="outline">
-                                {task.estimatedDuration}m
-                              </Badge>
-                            )}
-                            {task.category && (
-                              <Badge variant="outline">{task.category}</Badge>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setEditingTask(task)}
-                            disabled={loading}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => deleteTask(task._id || task.id!)}
-                            disabled={loading}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                    return (
+                      <div className="space-y-2">
+                        {/* Time slots from 9 AM to 6 PM */}
+                        {Array.from({ length: 10 }, (_, i) => {
+                          const hour = 9 + i;
+                          const timeSlot = new Date(scheduleDate);
+                          timeSlot.setHours(hour, 0, 0, 0);
+                          
+                          const blocksInSlot = daySchedule.blocks.filter(block => 
+                            block.startTime.getHours() === hour
+                          );
+
+                          return (
+                            <div key={hour} className="flex gap-4 items-start">
+                              <div className="w-16 text-sm text-muted-foreground font-mono">
+                                {format(timeSlot, "HH:mm")}
+                              </div>
+                              <div className="flex-1">
+                                {blocksInSlot.length > 0 ? (
+                                  blocksInSlot.map((block) => (
+                                    <div
+                                      key={block._id}
+                                      className="p-3 rounded-lg border border-border bg-accent/30 mb-2"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <h4 className="font-medium text-foreground">
+                                          {block.title}
+                                        </h4>
+                                        <Badge className={priorityColors[block.priority]}>
+                                          {priorityIcons[block.priority]}
+                                        </Badge>
+                                      </div>
+                                      <p className="text-sm text-muted-foreground">
+                                        {format(block.startTime, "HH:mm")} - {format(block.endTime, "HH:mm")} ({block.duration}m)
+                                      </p>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="h-12 border-l-2 border-dashed border-muted-foreground/30 ml-2" />
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        
+                        <div className="mt-4 p-3 bg-muted/50 rounded-lg">
+                          <p className="text-sm text-muted-foreground">
+                            📊 <strong>Schedule Summary:</strong> {daySchedule.blocks.length} blocks, {daySchedule.totalScheduledTime} minutes total
+                          </p>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </ScrollArea>
-            </CardContent>
-          </Card>
+                    );
+                  })()}
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
