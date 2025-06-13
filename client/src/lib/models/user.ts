@@ -1,4 +1,10 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import { randomBytes } from 'crypto';
+
+// Generate a secure API key
+function generateApiKey(): string {
+  return 'sh_' + randomBytes(32).toString('hex');
+}
 
 
 export interface IUser extends Document {
@@ -13,6 +19,8 @@ export interface IUser extends Document {
     publicId: string;
   };
   bio?: string;
+  apiKey: string;
+  apiKeyCreatedAt: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -65,10 +73,19 @@ const UserSchema = new Schema<IUser>(
       publicId: {
         type: String,
       },
-    },
-    bio: {
+    },    bio: {
       type: String,
       maxlength: [500, 'Bio cannot exceed 500 characters'],
+    },
+    apiKey: {
+      type: String,
+      unique: true,
+      default: generateApiKey,
+      index: true,
+    },
+    apiKeyCreatedAt: {
+      type: Date,
+      default: Date.now,
     },
   },
   {

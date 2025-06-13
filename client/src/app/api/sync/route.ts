@@ -7,18 +7,16 @@ import { ChatMessageModel, ChatSessionModel } from '@/lib/models/chat';
 import { VoiceSettingsModel, VoiceCommandModel } from '@/lib/models/voice';
 import { UserPreferencesModel } from '@/lib/models/preferences';
 import { UserModel } from '@/lib/models/user';
-import { FocusSessionModel, FocusSettingsModel } from '@/lib/models/focus';
 import { TaskModel, ScheduleBlockModel, ScheduleSettingsModel } from '@/lib/models/scheduler';
 import mongoose from 'mongoose';
 
 interface SyncRequest {
   lastSyncAt?: string;
-  dataTypes?: string[]; // ['schedules', 'chats', 'voice', 'focus', 'scheduler', 'preferences', 'profile']
+  dataTypes?: string[]; // ['schedules', 'chats', 'voice', 'scheduler', 'preferences', 'profile']
   pushData?: {
     schedules?: any[];
     chats?: any[];
     voice?: any[];
-    focus?: any[];
     scheduler?: {
       tasks?: any[];
       blocks?: any[];
@@ -40,10 +38,6 @@ interface SyncResponse {
     voice?: {
       settings: any | null;
       commands: any[];
-    };
-    focus?: {
-      sessions: any[];
-      settings: any | null;
     };
     scheduler?: {
       tasks: any[];
@@ -80,7 +74,7 @@ export async function POST(request: NextRequest) {
     const lastSyncAt = body.lastSyncAt ? new Date(body.lastSyncAt) : new Date(0);
     const currentTime = new Date();
     
-    const dataTypes = body.dataTypes || ['schedules', 'chats', 'voice', 'focus', 'scheduler', 'preferences', 'profile'];
+    const dataTypes = body.dataTypes || ['schedules', 'chats', 'voice', 'scheduler', 'preferences', 'profile'];
     const syncResponse: SyncResponse = {
       success: true,
       data: {},
@@ -102,14 +96,8 @@ export async function POST(request: NextRequest) {
           syncResponse.stats.pulled += (chatsData.sessions?.length || 0) + (chatsData.messages?.length || 0);
           break;
         case 'voice':
-          const voiceData = await pullVoiceData(userId, lastSyncAt);
-          syncResponse.data.voice = voiceData;
+          const voiceData = await pullVoiceData(userId, lastSyncAt);          syncResponse.data.voice = voiceData;
           syncResponse.stats.pulled += (voiceData.commands?.length || 0) + (voiceData.settings ? 1 : 0);
-          break;
-        case 'focus':
-          const focusData = await pullFocusData(userId, lastSyncAt);
-          syncResponse.data.focus = focusData;
-          syncResponse.stats.pulled += (focusData.sessions?.length || 0) + (focusData.settings ? 1 : 0);
           break;
         case 'scheduler':
           const schedulerData = await pullSchedulerData(userId, lastSyncAt);
@@ -153,17 +141,7 @@ export async function POST(request: NextRequest) {
         syncResponse.stats.conflicts += result.conflicts;
         if (result.conflictDetails?.length) {
           syncResponse.conflicts?.push(...result.conflictDetails);
-        }
-      }
-
-      if (body.pushData.focus) {
-        const result = await pushFocusData(userId, body.pushData.focus, currentTime);
-        syncResponse.stats.pushed += result.pushed;
-        syncResponse.stats.conflicts += result.conflicts;
-        if (result.conflictDetails?.length) {
-          syncResponse.conflicts?.push(...result.conflictDetails);
-        }
-      }
+        }      }
 
       if (body.pushData.scheduler) {
         const result = await pushSchedulerData(userId, body.pushData.scheduler, currentTime);
@@ -228,30 +206,9 @@ async function pullChats(userId: mongoose.Types.ObjectId, lastSyncAt: Date) {
     $or: [
       { updatedAt: { $gt: lastSyncAt } },
       { lastSyncedAt: { $gt: lastSyncAt } }
-    ]
-  }).sort({ createdAt: -1 }).limit(200).lean();
+    ]  }).sort({ createdAt: -1 }).limit(200).lean();
   
   return { sessions, messages };
-}
-
-async function pullFocusData(userId: mongoose.Types.ObjectId, lastSyncAt: Date) {
-  const sessions = await FocusSessionModel.find({
-    userId,
-    $or: [
-      { updatedAt: { $gt: lastSyncAt } },
-      { lastSyncedAt: { $gt: lastSyncAt } }
-    ]
-  }).sort({ startTime: -1 }).limit(100).lean();
-
-  const settings = await FocusSettingsModel.findOne({
-    userId,
-    $or: [
-      { updatedAt: { $gt: lastSyncAt } },
-      { lastSyncedAt: { $gt: lastSyncAt } }
-    ]
-  }).lean();
-
-  return { sessions, settings };
 }
 
 async function pullVoiceData(userId: mongoose.Types.ObjectId, lastSyncAt: Date) {
@@ -460,63 +417,6 @@ async function pushVoiceData(userId: mongoose.Types.ObjectId, voiceData: any[], 
   return { pushed, conflicts, conflictDetails };
 }
 
-async function pushFocusData(userId: mongoose.Types.ObjectId, focusData: any[], currentTime: Date) {
-  let pushed = 0;
-  let conflicts = 0;
-  const conflictDetails: any[] = [];
-
-  for (const item of focusData) {
-    try {
-      if (item.type === 'session') {
-        const existing = await FocusSessionModel.findOne({
-          userId,
-          sessionId: item.sessionId
-        });
-
-        if (existing && existing.updatedAt > new Date(item.updatedAt)) {
-          conflicts++;
-          conflictDetails.push({
-            type: 'focus_session',
-            id: item.sessionId,
-            serverData: existing,
-            clientData: item
-          });
-        } else {
-          await FocusSessionModel.findOneAndUpdate(
-            { sessionId: item.sessionId },
-            { ...item, userId, lastSyncedAt: currentTime },
-            { upsert: true, new: true }
-          );
-          pushed++;
-        }
-      } else if (item.type === 'settings') {
-        const existing = await FocusSettingsModel.findOne({ userId });
-
-        if (existing && existing.updatedAt > new Date(item.updatedAt)) {
-          conflicts++;
-          conflictDetails.push({
-            type: 'focus_settings',
-            id: userId.toString(),
-            serverData: existing,
-            clientData: item
-          });
-        } else {
-          await FocusSettingsModel.findOneAndUpdate(
-            { userId },
-            { ...item, userId, lastSyncedAt: currentTime },
-            { upsert: true, new: true }
-          );
-          pushed++;
-        }
-      }
-    } catch (error) {
-      console.error('Error pushing focus data:', error);
-    }
-  }
-
-  return { pushed, conflicts, conflictDetails };
-}
-
 async function pushSchedulerData(userId: mongoose.Types.ObjectId, schedulerData: any, currentTime: Date) {
   let pushed = 0;
   let conflicts = 0;
@@ -688,53 +588,43 @@ export async function GET(request: NextRequest) {
     }
 
     await connectMongo();
-    const userId = new mongoose.Types.ObjectId(session.user.id);
-
-    const [
+    const userId = new mongoose.Types.ObjectId(session.user.id);    const [
       scheduleCount,
       chatSessionCount,
       chatMessageCount,
       voiceCommandCount,
-      focusSessionCount,
       taskCount,
       scheduleBlockCount,
       preferences,
       lastScheduleSync,
       lastChatSync,
       lastVoiceSync,
-      lastFocusSync,
       lastSchedulerSync
     ] = await Promise.all([
       ScheduleItemModel.countDocuments({ userId }),
       ChatSessionModel.countDocuments({ userId }),
       ChatMessageModel.countDocuments({ userId }),
       VoiceCommandModel.countDocuments({ userId }),
-      FocusSessionModel.countDocuments({ userId }),
       TaskModel.countDocuments({ userId }),
       ScheduleBlockModel.countDocuments({ userId }),
       UserPreferencesModel.findOne({ userId }),
       ScheduleItemModel.findOne({ userId }).sort({ lastSyncedAt: -1 }).select('lastSyncedAt'),
       ChatMessageModel.findOne({ userId }).sort({ lastSyncedAt: -1 }).select('lastSyncedAt'),
       VoiceCommandModel.findOne({ userId }).sort({ lastSyncedAt: -1 }).select('lastSyncedAt'),
-      FocusSessionModel.findOne({ userId }).sort({ lastSyncedAt: -1 }).select('lastSyncedAt'),
       TaskModel.findOne({ userId }).sort({ lastSyncedAt: -1 }).select('lastSyncedAt')
-    ]);
-
-    return NextResponse.json({
+    ]);    return NextResponse.json({
       success: true,
       stats: {
         schedules: scheduleCount,
         chatSessions: chatSessionCount,
         chatMessages: chatMessageCount,
         voiceCommands: voiceCommandCount,
-        focusSessions: focusSessionCount,
         tasks: taskCount,
         scheduleBlocks: scheduleBlockCount,
         lastSync: {
           schedules: lastScheduleSync?.lastSyncedAt,
           chats: lastChatSync?.lastSyncedAt,
           voice: lastVoiceSync?.lastSyncedAt,
-          focus: lastFocusSync?.lastSyncedAt,
           scheduler: lastSchedulerSync?.lastSyncedAt,
           preferences: preferences?.lastSyncedAt
         },

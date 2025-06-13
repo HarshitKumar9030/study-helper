@@ -33,8 +33,7 @@ export async function POST(request: Request) {
     }
     
     const hashedPassword = await hash(password, 10);
-    
-    const user = await UserModel.create({
+      const user = await UserModel.create({
       name,
       email,
       password: hashedPassword,
@@ -47,6 +46,7 @@ export async function POST(request: Request) {
         id: (user._id as any).toString(),
         name: user.name,
         email: user.email,
+        apiKey: user.apiKey, // Include API key in response
       },
     });
   } catch (error) {

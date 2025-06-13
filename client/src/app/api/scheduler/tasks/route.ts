@@ -50,26 +50,29 @@ export async function GET(request: NextRequest) {
       filter.dueDate = {};
       if (startDate) filter.dueDate.$gte = new Date(startDate);
       if (endDate) filter.dueDate.$lte = new Date(endDate);
-    }
-
-    const tasks = await TaskModel.find(filter)
+    }    const tasks = await TaskModel.find(filter)
       .sort({ dueDate: 1, priority: -1, createdAt: -1 })
       .limit(limit)
       .lean();
 
-    // Get task statistics
-    const stats = await TaskModel.getTaskStats(userId);
+    // Get task statistics manually
+    const totalTasks = await TaskModel.countDocuments({ userId });
+    const completedTasks = await TaskModel.countDocuments({ userId, completed: true });
+    const overdueTasks = await TaskModel.countDocuments({ 
+      userId, 
+      completed: false, 
+      dueDate: { $lt: new Date() } 
+    });
 
-    return NextResponse.json({
+    const stats = {
+      totalTasks,
+      completedTasks,
+      overdueTasks,
+      pendingTasks: totalTasks - completedTasks
+    };    return NextResponse.json({
       success: true,
       tasks,
-      stats: stats[0] || {
-        totalTasks: 0,
-        completedTasks: 0,
-        overdueTasks: 0,
-        avgEstimatedDuration: 0,
-        totalEstimatedTime: 0
-      }
+      stats
     });
   } catch (error) {
     console.error('Tasks fetch error:', error);

@@ -10,7 +10,7 @@ import mongoose from 'mongoose';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { blockId: string } }
+  { params }: { params: Promise<{ blockId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -20,7 +20,7 @@ export async function GET(
 
     await connectMongo();
     const userId = new mongoose.Types.ObjectId(session.user.id);
-    const { blockId } = params;
+    const { blockId } = await params;
 
     const block = await ScheduleBlockModel.findOne({
       userId,
@@ -49,7 +49,7 @@ export async function GET(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { blockId: string } }
+  { params }: { params: Promise<{ blockId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -59,7 +59,7 @@ export async function PUT(
 
     await connectMongo();
     const userId = new mongoose.Types.ObjectId(session.user.id);
-    const { blockId } = params;
+    const { blockId } = await params;
     const body = await request.json();
 
     // Find the block first
@@ -150,7 +150,7 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { blockId: string } }
+  { params }: { params: Promise<{ blockId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -160,7 +160,7 @@ export async function DELETE(
 
     await connectMongo();
     const userId = new mongoose.Types.ObjectId(session.user.id);
-    const { blockId } = params;
+    const { blockId } = await params;
 
     const result = await ScheduleBlockModel.deleteOne({
       userId,
