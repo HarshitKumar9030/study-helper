@@ -22,18 +22,18 @@ export interface VoiceCommand {
 export interface VoiceSettings {
   speechRate: number;
   speechVolume: number;
-  speechVoice: string;
+  speechVoice: string; // Voice URI for selected voice
   enableContinuousListening: boolean;
   autoSpeak: boolean;
   language: string;
   voiceGender: 'female' | 'male' | 'neutral';
-  voiceQuality: 'standard' | 'enhanced';
+  voiceQuality: 'standard' | 'enhanced' | 'premium';
   wakeWordSensitivity: number;
   noiseReduction: boolean;
   autoTranscription: boolean;
   confidenceThreshold: number;
   activationKeyword: string;
-  listeningAnimation: 'pulse' | 'wave' | 'ripple' | 'glow';
+  listeningAnimation: 'pulse' | 'wave' | 'ripple' | 'bars';
   themeAware: boolean;
 }
 

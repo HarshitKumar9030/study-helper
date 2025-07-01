@@ -57,13 +57,22 @@ export default function VoiceAssistant() {
       utterance.volume = voiceSettings.speechVolume;
       utterance.lang = voiceSettings.language;
       
+      // Set the selected voice if available
+      if (voiceSettings.speechVoice && voiceSettings.speechVoice !== 'default') {
+        const voices = window.speechSynthesis.getVoices();
+        const selectedVoice = voices.find(voice => voice.voiceURI === voiceSettings.speechVoice);
+        if (selectedVoice) {
+          utterance.voice = selectedVoice;
+        }
+      }
+      
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
       utterance.onerror = () => setIsSpeaking(false);
       
       window.speechSynthesis.speak(utterance);
     }
-  }, [voiceSettings.speechRate, voiceSettings.speechVolume, voiceSettings.language]);
+  }, [voiceSettings.speechRate, voiceSettings.speechVolume, voiceSettings.language, voiceSettings.speechVoice]);
 
   const stopSpeaking = useCallback(() => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -262,38 +271,44 @@ export default function VoiceAssistant() {
       isMounted = false;
       console.log('🧹 VoiceAssistant component unmounting');
     };
-  }, []); // Empty dependency array to prevent infinite loops
+  }, [loadVoiceData]); // Include loadVoiceData in dependencies
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-      <VoiceControls
-        isListening={isListening}
-        isSpeaking={isSpeaking}
-        isProcessing={isProcessing}
-        isSyncing={isSyncing}
-        lastRecognized={lastRecognized}
-        voiceSettings={voiceSettings}
-        theme={theme}
-        onStartListening={startListening}
-        onStopListening={stopListening}
-        onSpeakText={speakText}
-        onStopSpeaking={stopSpeaking}
-        onSyncData={syncData}
-        onLastRecognizedChange={setLastRecognized}
-        onSettingsChange={handleSettingsChange}
-        textToSpeakRef={textToSpeakRef}
-      />
+    <div className="flex flex-col lg:flex-row gap-6 h-full max-w-7xl mx-auto">
+      {/* Main Voice Controls - Left Panel */}
+      <div className="lg:w-1/3 space-y-6">
+        <VoiceControls
+          isListening={isListening}
+          isSpeaking={isSpeaking}
+          isProcessing={isProcessing}
+          isSyncing={isSyncing}
+          lastRecognized={lastRecognized}
+          voiceSettings={voiceSettings}
+          theme={theme}
+          onStartListening={startListening}
+          onStopListening={stopListening}
+          onSpeakText={speakText}
+          onStopSpeaking={stopSpeaking}
+          onSyncData={syncData}
+          onLastRecognizedChange={setLastRecognized}
+          onSettingsChange={handleSettingsChange}
+          textToSpeakRef={textToSpeakRef}
+        />
+      </div>
 
-      <VoiceHistory
-        voiceCommands={voiceCommands}
-        voiceSettings={voiceSettings}
-        isSyncing={isSyncing}
-        isSpeaking={isSpeaking}
-        theme={theme}
-        onSyncData={syncData}
-        onClearHistory={clearHistory}
-        onSpeakText={speakText}
-      />
+      {/* Voice History - Right Panel */}
+      <div className="lg:w-2/3">
+        <VoiceHistory
+          voiceCommands={voiceCommands}
+          voiceSettings={voiceSettings}
+          isSyncing={isSyncing}
+          isSpeaking={isSpeaking}
+          theme={theme}
+          onSyncData={syncData}
+          onClearHistory={clearHistory}
+          onSpeakText={speakText}
+        />
+      </div>
     </div>
   );
 }

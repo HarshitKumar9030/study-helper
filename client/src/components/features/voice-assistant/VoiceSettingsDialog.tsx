@@ -96,6 +96,20 @@ export function VoiceSettingsDialog({ settings, onSettingsChange }: VoiceSetting
               </div>
 
               <div className="space-y-2">
+                <Label>Voice Quality</Label>
+                <Select value={settings.voiceQuality} onValueChange={(value: 'standard' | 'enhanced' | 'premium') => updateSetting('voiceQuality', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="standard">Standard</SelectItem>
+                    <SelectItem value="enhanced">Enhanced</SelectItem>
+                    <SelectItem value="premium">Premium</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
                 <Label>Voice Gender</Label>
                 <Select value={settings.voiceGender} onValueChange={(value: 'female' | 'male' | 'neutral') => updateSetting('voiceGender', value)}>
                   <SelectTrigger>
@@ -162,7 +176,7 @@ export function VoiceSettingsDialog({ settings, onSettingsChange }: VoiceSetting
               
               <div className="space-y-2">
                 <Label>Listening Animation</Label>
-                <Select value={settings.listeningAnimation} onValueChange={(value: 'pulse' | 'wave' | 'ripple' | 'glow') => updateSetting('listeningAnimation', value)}>
+                <Select value={settings.listeningAnimation} onValueChange={(value: 'pulse' | 'wave' | 'ripple' | 'bars') => updateSetting('listeningAnimation', value)}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -170,7 +184,7 @@ export function VoiceSettingsDialog({ settings, onSettingsChange }: VoiceSetting
                     <SelectItem value="pulse">Pulse</SelectItem>
                     <SelectItem value="wave">Wave</SelectItem>
                     <SelectItem value="ripple">Ripple</SelectItem>
-                    <SelectItem value="glow">Glow</SelectItem>
+                    <SelectItem value="bars">Bars</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

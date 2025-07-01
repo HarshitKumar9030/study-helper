@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -14,45 +15,40 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import {
   Moon,
-  Sun,  User,
+  Sun,
+  User,
   LogOut,
   Settings,
-  BookOpen,
-  Calendar,
   MessageCircle,
+  Calendar,
   Mic,
   Home,
-  BarChart3,
   Menu,
-  X,
+  Command,
+  Zap,
 } from "lucide-react";
 import { getOptimizedImageUrl } from "@/lib/cloudinary";
+import { motion, AnimatePresence } from "framer-motion";
 
-const Navbar = () => {
+const ModernNavbar = () => {
   const { data: session, status } = useSession();
   const { theme, setTheme } = useTheme();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const pathname = usePathname();
 
-  // Prevent hydration mismatch
-  console.log(session?.user)
   useEffect(() => {
     setMounted(true);
   }, []);
-  const toggleTheme = () => {
-    if (!mounted) return;
-    setTheme(theme === "dark" ? "light" : "dark");
-  };
+
+  const navigationItems = [
+    { href: "/dashboard", label: "Overview", icon: Home },
+    { href: "/chat", label: "AI Chat", icon: MessageCircle },
+    { href: "/scheduler", label: "Planner", icon: Calendar },
+    { href: "/voice", label: "Voice", icon: Mic },
+  ];
+
   const getUserInitials = (name: string) => {
     return name
       .split(" ")
@@ -60,296 +56,268 @@ const Navbar = () => {
       .join("")
       .toUpperCase()
       .slice(0, 2);
-  };  const navigationItems = [
-    { href: "/dashboard", label: "Dashboard", icon: Home },
-    { href: "/chat", label: "Chat", icon: MessageCircle },
-    { href: "/scheduler", label: "Scheduler", icon: Calendar },
-    { href: "/voice", label: "Voice Assistant", icon: Mic },
-  ];
+  };
 
-  const closeMobileMenu = () => setMobileMenuOpen(false);
+  const isActiveRoute = (href: string) => pathname === href;
+
   return (
-    <nav className="sticky px-2 top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 transition-all duration-300">
-      <div className="container flex h-16 items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center space-x-2 group">
-          <div className="flex items-center space-x-2">
-            <BookOpen className="h-7 w-7 text-purple-700 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3" />
-            <span className="font-bold text-sm bg-gradient-to-r from-purple-700 to-blue-600 bg-clip-text text-transparent">
-              Study Helper
-            </span>
-          </div>
-        </Link>
+    <motion.nav 
+      initial={{ y: -100 }}
+      animate={{ y: 0 }}
+      className="absolute top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60"
+    >
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          {/* Logo */}
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <Link href="/" className="flex items-center space-x-2 group">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                <Zap className="h-4 w-4" />
+              </div>
+              <span className="hidden sm:block text-sm font-semibold text-foreground">
+                Study Helper
+              </span>
+            </Link>
+          </motion.div>
 
-        {/* Desktop Navigation */}
-        {session && (
-          <NavigationMenu className="hidden md:flex">
-            <NavigationMenuList>
+          {/* Desktop Navigation */}
+          {session && (
+            <nav className="hidden md:flex items-center space-x-1">
               {navigationItems.map((item) => {
                 const IconComponent = item.icon;
+                const isActive = isActiveRoute(item.href);
+                
                 return (
-                  <NavigationMenuItem key={item.href}>
-                    <Link href={item.href} legacyBehavior passHref>
-                      <NavigationMenuLink className="group inline-flex h-10 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-all duration-200 hover:bg-accent hover:text-accent-foreground  focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50 data-[active]:bg-accent/50 data-[state=open]:bg-accent/50">
-                        <IconComponent className="mr-2 h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
-                        {item.label}
-                      </NavigationMenuLink>
+                  <motion.div
+                    key={item.href}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Link
+                      href={item.href}
+                      className={`
+                        relative flex items-center space-x-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200
+                        ${isActive 
+                          ? 'text-foreground bg-accent/50' 
+                          : 'text-muted-foreground hover:text-foreground hover:bg-accent/30'
+                        }
+                      `}
+                    >
+                      <IconComponent className="h-4 w-4" />
+                      <span>{item.label}</span>
+                      {isActive && (
+                        <motion.div
+                          layoutId="navbar-indicator"
+                          className="absolute inset-0 rounded-lg bg-accent/20 border border-accent/50"
+                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                        />
+                      )}
                     </Link>
-                  </NavigationMenuItem>
+                  </motion.div>
                 );
               })}
-            </NavigationMenuList>
-          </NavigationMenu>
-        )}
-
-        {/* Mobile Menu & Actions */}
-        <div className="flex items-center space-x-2">
-          {/* Mobile Menu Button */}
-          {session && (
-            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 md:hidden transition-all duration-200 hover:scale-110"
-                >
-                  <Menu className="h-5 w-5" />
-                  <span className="sr-only">Toggle navigation menu</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-0">
-                <div className="flex flex-col h-full">
-                  {/* Mobile Menu Header */}
-                  <div className="flex items-center justify-between p-6 border-b">
-                    <div className="flex items-center space-x-2">
-                      <BookOpen className="h-6 w-6 text-purple-700" />
-                      <span className="font-bold text-sm bg-gradient-to-r from-purple-700 to-blue-600 bg-clip-text text-transparent">
-                        Study Helper
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Mobile Navigation */}
-                  <div className="flex-1 p-6">
-                    <div className="space-y-2">
-                      {navigationItems.map((item) => {
-                        const IconComponent = item.icon;
-                        return (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={closeMobileMenu}
-                            className="flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 hover:bg-accent  group"
-                          >
-                            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 transition-colors duration-200 group-hover:bg-purple-200 dark:group-hover:bg-purple-800/40">
-                              <IconComponent className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                            </div>
-                            <span className="font-medium">{item.label}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Mobile Menu Footer */}
-                  <div className="p-6 border-t">
-                    <div className="flex items-center gap-3">                      <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
-                        <AvatarImage
-                          src={
-                            session.user?.image
-                              ? getOptimizedImageUrl(session.user.image, "w_40,h_40,c_thumb,g_face,f_auto,q_auto")
-                              : ""
-                          }
-                          alt={session.user?.name || ""}
-                          className="object-cover"
-                        />
-                        <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-600 text-white font-semibold text-sm">
-                          {session.user?.name
-                            ? getUserInitials(session.user.name)
-                            : "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col min-w-0 flex-1">
-                        {session.user?.name && (
-                          <p className="font-medium text-sm truncate">
-                            {session.user.name}
-                          </p>
-                        )}
-                        {session.user?.email && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {session.user.email}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
-          )}          {/* Theme Toggle */}
-          {mounted && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className="h-9 w-9 transition-all duration-200 hover:scale-110"
-              disabled={!mounted}
-            >
-              <Sun className="h-4 w-4 rotate-0 scale-100 transition-all duration-300 dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all duration-300 dark:rotate-0 dark:scale-100" />
-              <span className="sr-only">Toggle theme</span>
-            </Button>
-          )}{" "}
-          {/* Profile Dropdown / Auth Buttons */}
-          {status === "loading" ? (
-            <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
-          ) : session ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="relative h-10 w-10 rounded-full ring-offset-background transition-all duration-300 hover:ring-2 hover:ring-ring hover:ring-offset-2 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                >                  
-                <Avatar className="h-9 w-9 border-2 border-background shadow-md transition-all duration-300 hover:shadow-lg">
-                    <AvatarImage
-                      src={
-                        session.user?.image
-                          ? getOptimizedImageUrl(session.user.image, "w_36,h_36,c_thumb,g_face,f_auto,q_auto")
-                          : ""
-                      }
-                      alt={session.user?.name || ""}
-                      className="object-cover"
-                    />
-                    <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-600 text-white font-semibold text-sm">
-                      {session.user?.name
-                        ? getUserInitials(session.user.name)
-                        : "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-64 p-2 bg-card/95 backdrop-blur-md border shadow-lg animate-in slide-in-from-top-2 duration-300"
-                align="end"
-                forceMount
-                sideOffset={8}
-              >
-                {/* User Info Header */}
-                <div className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border border-purple-100 dark:border-purple-800/30 transition-all duration-300 hover:shadow-sm">                  <Avatar className="h-12 w-12 border-2 border-white dark:border-gray-800 shadow-sm">
-                    <AvatarImage
-                      src={
-                        session.user?.image
-                          ? getOptimizedImageUrl(session.user.image, "w_48,h_48,c_thumb,g_face,f_auto,q_auto")
-                          : ""
-                      }
-                      alt={session.user?.name || ""}
-                      className="object-cover"
-                    />
-                    <AvatarFallback className="bg-gradient-to-br from-purple-500 to-blue-600 text-white font-semibold">
-                      {session.user?.name
-                        ? getUserInitials(session.user.name)
-                        : "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col space-y-1 min-w-0 flex-1">
-                    {session.user?.name && (
-                      <p className="font-semibold text-foreground text-sm leading-tight">
-                        {session.user.name}
-                      </p>
-                    )}
-                    {session.user?.email && (
-                      <p className="text-xs text-muted-foreground truncate">
-                        {session.user.email}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-1">
-                      <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
-                      <span className="text-xs text-green-600 dark:text-green-400 font-medium">
-                        Online
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <DropdownMenuSeparator className="my-2" />
-
-                <div className="space-y-1">
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/profile"
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-200 hover:bg-accent/50 focus:bg-accent/50  cursor-pointer group"
-                    >
-                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 transition-all duration-200 group-hover:bg-blue-200 dark:group-hover:bg-blue-800/40">
-                        <User className="h-4 w-4 text-blue-600 dark:text-blue-400 transition-transform duration-200 group-hover:scale-110" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-medium text-sm">Profile</span>
-                        <span className="text-xs text-muted-foreground">
-                          Manage your account
-                        </span>
-                      </div>
-                    </Link>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/settings"
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-200 hover:bg-accent/50 focus:bg-accent/50  cursor-pointer group"
-                    >
-                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 transition-all duration-200 group-hover:bg-gray-200 dark:group-hover:bg-gray-700">
-                        <Settings className="h-4 w-4 text-gray-600 dark:text-gray-400 transition-transform duration-200 group-hover:rotate-45" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="font-medium text-sm">Settings</span>
-                        <span className="text-xs text-muted-foreground">
-                          Preferences & privacy
-                        </span>
-                      </div>
-                    </Link>
-                  </DropdownMenuItem>
-                </div>
-
-                <DropdownMenuSeparator className="my-2" />
-
-                {/* Sign Out */}
-                <DropdownMenuItem
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-md text-red-600 focus:text-red-600 hover:bg-red-50 focus:bg-red-50 dark:hover:bg-red-950/20 dark:focus:bg-red-950/20 cursor-pointer transition-all duration-200  group"
-                  onClick={() => signOut()}
-                >
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/30 transition-all duration-200 group-hover:bg-red-200 dark:group-hover:bg-red-800/40">
-                    <LogOut className="h-4 w-4 text-red-600 dark:text-red-400 transition-transform duration-200 group-hover:scale-110" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="font-medium text-sm">Sign out</span>
-                    <span className="text-xs text-red-500/70">
-                      End your session
-                    </span>
-                  </div>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="ghost"
-                onClick={() => signIn()}
-                className="transition-all duration-200  hidden sm:inline-flex"
-              >
-                Sign In
-              </Button>
-              <Button
-                onClick={() => signIn()}
-                className="transition-all duration-200  bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-              >
-                <span className="hidden sm:inline">Get Started</span>
-                <span className="sm:hidden">Sign In</span>
-              </Button>
-            </div>
+            </nav>
           )}
+
+          {/* Right Side Actions */}
+          <div className="flex items-center space-x-2">
+            {/* Theme Toggle */}
+            {mounted && (
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  className="h-9 w-9 p-0"
+                >
+                  <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                  <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                  <span className="sr-only">Toggle theme</span>
+                </Button>
+              </motion.div>
+            )}
+
+            {/* Mobile Menu Button */}
+            {session && (
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="md:hidden"
+              >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="h-9 w-9 p-0"
+                >
+                  <Menu className="h-4 w-4" />
+                </Button>
+              </motion.div>
+            )}
+
+            {/* Profile / Auth */}
+            {status === "loading" ? (
+              <div className="h-8 w-8 rounded-full bg-accent animate-pulse" />
+            ) : session ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="relative h-8 w-8 rounded-full ring-offset-background transition-all duration-200 hover:ring-2 hover:ring-ring hover:ring-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <Avatar className="h-8 w-8 border border-border/50">
+                      <AvatarImage
+                        src={
+                          session.user?.image
+                            ? getOptimizedImageUrl(session.user.image, "w_32,h_32,c_thumb,g_face,f_auto,q_auto")
+                            : ""
+                        }
+                        alt={session.user?.name || "User Avatar"}
+                        className="object-cover"
+                      />
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs font-medium">
+                        {session.user?.name
+                          ? getUserInitials(session.user.name)
+                          : "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </motion.button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-56 p-1"
+                  align="end"
+                  forceMount
+                  sideOffset={8}
+                >
+                  <div className="flex items-center gap-2 p-2 text-sm">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage
+                        src={
+                          session.user?.image
+                            ? getOptimizedImageUrl(session.user.image, "w_32,h_32,c_thumb,g_face,f_auto,q_auto")
+                            : ""
+                        }
+                        alt={session.user?.name || "User Avatar"}
+                      />
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xs">
+                        {session.user?.name
+                          ? getUserInitials(session.user.name)
+                          : "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col space-y-1">
+                      {session.user?.name && (
+                        <p className="text-sm font-medium leading-none">
+                          {session.user.name}
+                        </p>
+                      )}
+                      {session.user?.email && (
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {session.user.email}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="flex items-center">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/settings" className="flex items-center">
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-red-600 focus:text-red-600"
+                    onClick={() => signOut()}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Sign out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Button
+                    variant="ghost"
+                    onClick={() => signIn()}
+                    className="hidden sm:inline-flex"
+                  >
+                    Sign In
+                  </Button>
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Button
+                    onClick={() => signIn()}
+                    className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                  >
+                    Get Started
+                  </Button>
+                </motion.div>
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Mobile Menu */}
+        <AnimatePresence>
+          {isMenuOpen && session && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="md:hidden border-t border-border/40 py-4"
+            >
+              <nav className="flex flex-col space-y-1">
+                {navigationItems.map((item) => {
+                  const IconComponent = item.icon;
+                  const isActive = isActiveRoute(item.href);
+                  
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setIsMenuOpen(false)}
+                      className={`
+                        flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors
+                        ${isActive 
+                          ? 'text-foreground bg-accent/50' 
+                          : 'text-muted-foreground hover:text-foreground hover:bg-accent/30'
+                        }
+                      `}
+                    >
+                      <IconComponent className="h-4 w-4" />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-    </nav>
+    </motion.nav>
   );
 };
 
-export default Navbar;
+export default ModernNavbar;

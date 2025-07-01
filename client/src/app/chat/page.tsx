@@ -1,12 +1,34 @@
-import AIChat from '@/components/ai/AIChat2'
-import React from 'react'
+"use client";
 
-const page = () => {
+import AIChat from '@/components/ai/AIChat';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const ChatPage = () => {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Prevent hydration mismatch
+  if (!isMounted) {
+    return <div className="h-[calc(100vh-4rem)] w-full bg-white dark:bg-neutral-950" />;
+  }
+
   return (
-    <div className="min-h-[calc(100vh-4rem)] h-[calc(100vh-4rem)] flex">
-      <AIChat className="flex-1" maxHeight="calc(100vh - 4rem)" />
-    </div>
-  )
-}
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ 
+        opacity: 1, 
+        y: 0,
+        transition: { duration: 0.4, ease: "easeOut" }
+      }}
+      className="h-[calc(100vh-4rem)] w-full flex"
+    >
+      <AIChat />
+    </motion.div>
+  );
+};
 
-export default page
+export default ChatPage;
