@@ -89,17 +89,39 @@ export function VoiceControls({
   const handleTestVoice = async (voiceURI: string) => {
     return new Promise<void>((resolve) => {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
-        const utterance = new SpeechSynthesisUtterance('Hello! This is a test of this voice.');
-        const voice = availableVoices.find(v => v.voiceURI === voiceURI);
+        // Stop any current speech
+        window.speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance('Hello! This is how this voice sounds. I can help you with your studies and answer your questions.');
+        
+        // Get fresh voices list to ensure we have the latest
+        const currentVoices = window.speechSynthesis.getVoices();
+        const voice = currentVoices.find(v => v.voiceURI === voiceURI);
+        
         if (voice) {
           utterance.voice = voice;
+          console.log('Testing voice:', voice.name, voice.lang);
+        } else {
+          console.warn('Voice not found:', voiceURI);
         }
+        
         utterance.rate = voiceSettings.speechRate;
         utterance.volume = voiceSettings.speechVolume;
-        utterance.onend = () => resolve();
-        utterance.onerror = () => resolve();
+        utterance.lang = voice?.lang || voiceSettings.language;
         
-        window.speechSynthesis.speak(utterance);
+        utterance.onend = () => {
+          console.log('Voice test completed');
+          resolve();
+        };
+        utterance.onerror = (error) => {
+          console.error('Voice test error:', error);
+          resolve();
+        };
+        
+        // Small delay to ensure previous speech is cancelled
+        setTimeout(() => {
+          window.speechSynthesis.speak(utterance);
+        }, 100);
       } else {
         resolve();
       }

@@ -222,7 +222,7 @@ export function useAIAssistant() {
     }
     
     return response;
-  }, [chatAssistant.execute, conversationHistory]);
+  }, [chatAssistant, conversationHistory]);
 
   // Clear conversation history
   const clearHistory = useCallback(() => {

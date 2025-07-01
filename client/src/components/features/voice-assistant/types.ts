@@ -26,8 +26,6 @@ export interface VoiceSettings {
   enableContinuousListening: boolean;
   autoSpeak: boolean;
   language: string;
-  voiceGender: 'female' | 'male' | 'neutral';
-  voiceQuality: 'standard' | 'enhanced' | 'premium';
   wakeWordSensitivity: number;
   noiseReduction: boolean;
   autoTranscription: boolean;

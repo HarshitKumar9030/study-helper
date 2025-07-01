@@ -79,7 +79,7 @@ export function VoiceHistory({
                 </div>
                 <h3 className="font-medium mb-2">No conversations yet</h3>
                 <p className="text-sm max-w-sm mx-auto">
-                  Start speaking to see your voice interactions appear here. Try saying "Hello" or asking a study-related question.
+                  Start speaking to see your voice interactions appear here. Try saying &quot;Hello&quot; or asking a study-related question.
                 </p>
               </div>
             ) : (

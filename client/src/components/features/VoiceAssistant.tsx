@@ -32,8 +32,6 @@ export default function VoiceAssistant() {
     enableContinuousListening: false,
     autoSpeak: true,
     language: 'en-US',
-    voiceGender: 'female',
-    voiceQuality: 'enhanced',
     wakeWordSensitivity: 0.7,
     noiseReduction: true,
     autoTranscription: true,
@@ -63,14 +61,25 @@ export default function VoiceAssistant() {
         const selectedVoice = voices.find(voice => voice.voiceURI === voiceSettings.speechVoice);
         if (selectedVoice) {
           utterance.voice = selectedVoice;
+          console.log('Using voice:', selectedVoice.name, selectedVoice.lang);
+        } else {
+          console.warn('Selected voice not found:', voiceSettings.speechVoice);
         }
+      } else {
+        console.log('Using default voice');
       }
       
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
+      utterance.onerror = (error) => {
+        console.error('Speech synthesis error:', error);
+        setIsSpeaking(false);
+      };
       
-      window.speechSynthesis.speak(utterance);
+      // Small delay to ensure previous speech is cancelled
+      setTimeout(() => {
+        window.speechSynthesis.speak(utterance);
+      }, 100);
     }
   }, [voiceSettings.speechRate, voiceSettings.speechVolume, voiceSettings.language, voiceSettings.speechVoice]);
 
@@ -232,9 +241,22 @@ export default function VoiceAssistant() {
     }
   }, [isListening]);
 
-  const syncData = useCallback(() => {
-    loadVoiceData(setVoiceSettings, setVoiceCommands);
-  }, [loadVoiceData]);  const clearHistory = useCallback(() => {
+  // Memoized setters to prevent re-render loops
+  const stableSetVoiceSettings = useCallback((setter: (prev: VoiceSettings) => VoiceSettings) => {
+    setVoiceSettings(setter);
+  }, []);
+
+  const stableSetVoiceCommands = useCallback((commands: VoiceCommand[]) => {
+    setVoiceCommands(commands);
+  }, []);
+
+  const syncData = useCallback(async () => {
+    if (loadVoiceData) {
+      await loadVoiceData(stableSetVoiceSettings, stableSetVoiceCommands);
+    }
+  }, [loadVoiceData, stableSetVoiceSettings, stableSetVoiceCommands]);
+
+  const clearHistory = useCallback(() => {
     console.log('🗑️ Clear history called - before:', voiceCommands.length);
     setVoiceCommands([]);
     console.log('🗑️ Clear history called - after clearing state, new length should be 0');
@@ -249,15 +271,19 @@ export default function VoiceAssistant() {
   const handleSettingsChange = useCallback((newSettings: VoiceSettings) => {
     setVoiceSettings(newSettings);
     saveVoiceSettings(newSettings);
-  }, [saveVoiceSettings]);  // Load data on component mount - only once
+  }, [saveVoiceSettings]);
+
+  // Load data on component mount - only once with stable dependencies
   useEffect(() => {
     let isMounted = true;
+    let hasLoaded = false;
     
     const loadData = async () => {
-      if (isMounted) {
+      if (isMounted && !hasLoaded) {
+        hasLoaded = true;
         console.log('🔄 Loading voice data on mount...');
         try {
-          await loadVoiceData(setVoiceSettings, setVoiceCommands);
+          await loadVoiceData(stableSetVoiceSettings, stableSetVoiceCommands);
           console.log('✅ Voice data loaded successfully');
         } catch (error) {
           console.error('❌ Failed to load voice data:', error);
@@ -271,7 +297,7 @@ export default function VoiceAssistant() {
       isMounted = false;
       console.log('🧹 VoiceAssistant component unmounting');
     };
-  }, [loadVoiceData]); // Include loadVoiceData in dependencies
+  }, [loadVoiceData, stableSetVoiceSettings, stableSetVoiceCommands]); // Stable dependencies
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 h-full max-w-7xl mx-auto">

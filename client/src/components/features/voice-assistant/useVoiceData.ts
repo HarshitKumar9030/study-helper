@@ -5,22 +5,33 @@ import { useToast } from '@/hooks/use-toast';
 import { VoiceCommand, VoiceSettings } from './types';
 
 export function useVoiceData() {
-  const { toast } = useToast();
   const [isSyncing, setIsSyncing] = useState(false);
   const sessionIdRef = useRef<string>(Date.now().toString());
+  const loadingRef = useRef<boolean>(false);
 
   // Load voice settings and commands from backend
   const loadVoiceData = useCallback(async (
     setVoiceSettings: (setter: (prev: VoiceSettings) => VoiceSettings) => void,
     setVoiceCommands: (commands: VoiceCommand[]) => void
   ) => {
+    // Prevent concurrent loads
+    if (loadingRef.current) {
+      console.log('🔄 Voice data loading already in progress, skipping...');
+      return;
+    }
+
     try {
+      loadingRef.current = true;
       setIsSyncing(true);
+      
+      console.log('🔄 Starting voice data load...');
       
       // Load settings
       const settingsResponse = await fetch('/api/sync/voice?type=settings');
       if (settingsResponse.ok) {
         const settingsData = await settingsResponse.json();
+        console.log('📥 Settings response:', settingsData);
+        
         if (settingsData.success && settingsData.data?.settings) {
           const backendSettings = settingsData.data.settings;
           setVoiceSettings(prev => ({
@@ -41,6 +52,8 @@ export function useVoiceData() {
       const commandsResponse = await fetch('/api/sync/voice?type=commands&limit=20');
       if (commandsResponse.ok) {
         const commandsData = await commandsResponse.json();
+        console.log('📥 Commands response:', commandsData);
+        
         if (commandsData.success && commandsData.data?.commands) {
           const backendCommands = commandsData.data.commands.map((cmd: any) => ({
             id: cmd._id,
@@ -58,18 +71,16 @@ export function useVoiceData() {
           }));
           setVoiceCommands(backendCommands);
         }
-      }    } catch (error) {
-      console.error('Error loading voice data:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load voice data from server",
-        variant: "destructive",
-      });
+      }
+      
+      console.log('✅ Voice data load completed');
+    } catch (error) {
+      console.error('❌ Error loading voice data:', error);
     } finally {
-      // Ensure isSyncing is always reset to prevent infinite loops
+      loadingRef.current = false;
       setIsSyncing(false);
     }
-  }, [toast]);
+  }, []); // Stable callback with no dependencies
   // Save voice command to backend
   const saveVoiceCommand = useCallback(async (command: VoiceCommand) => {
     try {

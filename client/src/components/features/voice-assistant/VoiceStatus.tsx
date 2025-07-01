@@ -127,7 +127,7 @@ export function VoiceStatus({
             Last Recognized
           </div>
           <div className="text-sm bg-background/50 rounded p-2 border">
-            "{lastRecognized}"
+            &ldquo;{lastRecognized}&rdquo;
           </div>
         </div>
       )}
