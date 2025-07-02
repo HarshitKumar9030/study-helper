@@ -13,13 +13,13 @@ export interface AIProvider {
 }
 
 export class GeminiProvider implements AIProvider {
-  name = 'Gemini 2.0 Flash';
-  id = 'gemini-2.0-flash';
+  name = 'Gemini 2.5 Flash';
+  id = 'gemini-2.5-flash';
   private client: GoogleGenAI | null = null;
 
   constructor() {
-    // Get API key from environment variables
-    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    // Get API key from environment variables (try both possible env var names)
+    const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
     
     if (!apiKey) {
       console.warn('Gemini API key not found. Please set NEXT_PUBLIC_GEMINI_API_KEY in your environment variables.');
@@ -30,6 +30,7 @@ export class GeminiProvider implements AIProvider {
       this.client = new GoogleGenAI({
         apiKey: apiKey
       });
+      console.log('Gemini client initialized successfully');
     } catch (error) {
       console.error('Failed to initialize Gemini client:', error);
     }
@@ -57,7 +58,7 @@ export class GeminiProvider implements AIProvider {
       ];
 
       const response = await this.client.models.generateContent({
-        model: 'gemini-2.0-flash-001',
+        model: 'gemini-2.5-flash',
         contents: allContents
       });
 
@@ -90,7 +91,7 @@ export class GeminiProvider implements AIProvider {
       ];
 
       const response = await this.client.models.generateContentStream({
-        model: 'gemini-2.0-flash-001',
+        model: 'gemini-2.5-flash',
         contents: allContents
       });
 

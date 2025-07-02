@@ -318,7 +318,7 @@ export default function AIChat() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="w-full justify-between text-xs h-10 bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-800">
                 <div className="flex items-center gap-2">
-                  {selectedProvider.id === 'gemini-2.0-flash' ? (
+                  {selectedProvider.id === 'gemini-2.5-flash' ? (
                     <Sparkles className="w-3 h-3" />
                   ) : (
                     <Zap className="w-3 h-3" />
@@ -335,7 +335,7 @@ export default function AIChat() {
                   onClick={() => setSelectedProvider(provider)}
                   className="flex items-center gap-3 p-3"
                 >
-                  {provider.id === 'gemini-2.0-flash' ? (
+                  {provider.id === 'gemini-2.5-flash' ? (
                     <Sparkles className="w-4 h-4" />
                   ) : (
                     <Zap className="w-4 h-4" />
@@ -343,7 +343,7 @@ export default function AIChat() {
                   <div className="flex-1">
                     <div className="font-medium">{provider.name}</div>
                     <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                      {provider.id === 'gemini-2.0-flash' 
+                      {provider.id === 'gemini-2.5-flash' 
                         ? "Google's latest model with multimodal capabilities" 
                         : "Open-source model optimized for learning"
                       }
@@ -431,7 +431,7 @@ export default function AIChat() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="w-full justify-between text-xs h-10 bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-800">
                 <div className="flex items-center gap-2">
-                  {selectedProvider.id === 'gemini-2.0-flash' ? (
+                  {selectedProvider.id === 'gemini-2.5-flash' ? (
                     <Sparkles className="w-3 h-3" />
                   ) : (
                     <Zap className="w-3 h-3" />
@@ -448,7 +448,7 @@ export default function AIChat() {
                   onClick={() => setSelectedProvider(provider)}
                   className="flex items-center gap-3 p-3"
                 >
-                  {provider.id === 'gemini-2.0-flash' ? (
+                  {provider.id === 'gemini-2.5-flash' ? (
                     <Sparkles className="w-4 h-4" />
                   ) : (
                     <Zap className="w-4 h-4" />
@@ -456,7 +456,7 @@ export default function AIChat() {
                   <div className="flex-1">
                     <div className="font-medium">{provider.name}</div>
                     <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                      {provider.id === 'gemini-2.0-flash' 
+                      {provider.id === 'gemini-2.5-flash' 
                         ? "Google's latest model with multimodal capabilities" 
                         : "Open-source model optimized for learning"
                       }
@@ -606,7 +606,7 @@ export default function AIChat() {
                         </>
                       ) : (
                         <AvatarFallback className="bg-neutral-100 dark:bg-neutral-800">
-                          {selectedProvider.id === 'gemini-2.0-flash' ? (
+                          {selectedProvider.id === 'gemini-2.5-flash' ? (
                             <Sparkles className="w-4 h-4 lg:w-5 lg:h-5 text-neutral-600 dark:text-neutral-400" />
                           ) : (
                             <Zap className="w-4 h-4 lg:w-5 lg:h-5 text-neutral-600 dark:text-neutral-400" />
@@ -632,31 +632,24 @@ export default function AIChat() {
                             {message.content}
                           </div>
                         ) : (
-                          <div className="bg-neutral-100 dark:bg-neutral-800 rounded-xl p-4 relative">
-                            <div className="prose prose-neutral dark:prose-invert max-w-none">
-                              {/* Replace the direct usage of ReactMarkdown with a safer approach */}
-                              {typeof message.content === 'string' && (
-                                <div 
-                                  className="markdown-content" 
-                                  dangerouslySetInnerHTML={{ 
-                                    __html: markdownToHtml(message.content) 
-                                  }}
-                                />
-                              )}
-                            </div>
-                            <div className="absolute bottom-2 right-2 text-xs text-neutral-400">
-                              {message.timestamp ? new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
-                            </div>
+                          <div className="prose prose-neutral dark:prose-invert max-w-none">
+                            {typeof message.content === 'string' && (
+                              <div 
+                                className="markdown-content" 
+                                dangerouslySetInnerHTML={{ 
+                                  __html: markdownToHtml(message.content) 
+                                }}
+                              />
+                            )}
                           </div>
                         )}
                       </div>
                       
-                      {/* Message timestamp */}
                       <div className={cn(
                         "text-xs text-neutral-400 dark:text-neutral-500 mt-2",
                         message.role === "user" ? "text-right" : "text-left"
                       )}>
-                        {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {message.timestamp ? new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                       </div>
                     </div>
                   </motion.div>
@@ -699,7 +692,7 @@ export default function AIChat() {
                 >
                   <Avatar className="w-8 h-8 lg:w-10 lg:h-10 shrink-0 mt-1">
                     <AvatarFallback className="bg-neutral-100 dark:bg-neutral-800">
-                      {selectedProvider.id === 'gemini-2.0-flash' ? (
+                      {selectedProvider.id === 'gemini-2.5-flash' ? (
                         <Sparkles className="w-4 h-4 lg:w-5 lg:h-5 text-neutral-600 dark:text-neutral-400" />
                       ) : (
                         <Zap className="w-4 h-4 lg:w-5 lg:h-5 text-neutral-600 dark:text-neutral-400" />
@@ -747,7 +740,7 @@ export default function AIChat() {
               <Button
                 onClick={handleSendMessage}
                 disabled={!input.trim() || isGenerating}
-                className="h-14 w-14 p-0 bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-900 rounded-2xl shadow-sm transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="h-14 w-14 p-0 mb-2 bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-900 rounded-2xl shadow-sm transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send className="w-5 h-5" />
               </Button>
