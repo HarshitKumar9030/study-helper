@@ -27,6 +27,7 @@ import {
   Menu,
   Command,
   Zap,
+  BookOpen,
 } from "lucide-react";
 import { getOptimizedImageUrl } from "@/lib/cloudinary";
 import { motion, AnimatePresence } from "framer-motion";
@@ -45,6 +46,7 @@ const ModernNavbar = () => {
   const navigationItems = [
     { href: "/dashboard", label: "Overview", icon: Home },
     { href: "/chat", label: "AI Chat", icon: MessageCircle },
+    { href: "/study-tracker", label: "Study Tracker", icon: BookOpen },
     { href: "/scheduler", label: "Planner", icon: Calendar },
     { href: "/voice", label: "Voice", icon: Mic },
   ];
