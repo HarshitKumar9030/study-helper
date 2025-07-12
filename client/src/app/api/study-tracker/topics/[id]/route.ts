@@ -162,7 +162,7 @@ export async function PATCH(
     
     // Clean up any legacy topicId fields from embedded documents to avoid validation errors
     if (topic.progress) {
-      topic.progress = topic.progress.map(p => {
+      topic.progress = topic.progress.map((p: any) => {
         const cleanProgress = { ...p.toObject() };
         delete cleanProgress.topicId;
         return cleanProgress;
@@ -170,7 +170,7 @@ export async function PATCH(
     }
     
     if (topic.aiSuggestions) {
-      topic.aiSuggestions = topic.aiSuggestions.map(s => {
+      topic.aiSuggestions = topic.aiSuggestions.map((s: any) => {
         const cleanSuggestion = { ...s.toObject() };
         delete cleanSuggestion.topicId;
         return cleanSuggestion;
