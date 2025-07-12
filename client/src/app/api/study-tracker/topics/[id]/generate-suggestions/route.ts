@@ -7,9 +7,10 @@ import { StudyTopic } from '@/lib/models/study-tracker';
 // POST /api/study-tracker/topics/[id]/generate-suggestions - Generate new AI suggestions
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {
@@ -19,7 +20,7 @@ export async function POST(
     await connectMongo();
 
     const topic = await StudyTopic.findOne({
-      _id: params.id,
+      _id: id,
       userId: session.user.email
     });
 
@@ -32,7 +33,7 @@ export async function POST(
 
     // Update the topic with new suggestions
     const updatedTopic = await StudyTopic.findByIdAndUpdate(
-      params.id,
+      id,
       { 
         $set: { aiSuggestions: suggestions },
         $inc: { __v: 1 }

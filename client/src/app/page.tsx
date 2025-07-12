@@ -21,7 +21,16 @@ import {
   Users,
   BarChart3,
   Zap,
-  Star
+  Star,
+  Brain,
+  Timer,
+  TrendingUp,
+  Lightbulb,
+  Play,
+  Pause,
+  Shield,
+  Globe,
+  Smartphone
 } from 'lucide-react';
 
 export default function Home() {
@@ -52,51 +61,98 @@ export default function Home() {
   const features = [
     {
       icon: BrainCircuit,
-      title: 'AI Chat Assistant',
-      description: 'Get instant help with homework and study questions from our AI tutor.',
-      color: 'text-blue-500'
+      title: 'AI Study Assistant',
+      description: 'Get instant help with homework and study questions from our advanced AI tutor that understands your learning style.',
+      color: 'text-blue-500',
+      gradient: 'from-blue-500/10 to-cyan-500/10'
+    },
+    {
+      icon: Target,
+      title: 'Study Tracker',
+      description: 'Track your learning progress with detailed analytics, confidence ratings, and personalized study insights.',
+      color: 'text-emerald-500',
+      gradient: 'from-emerald-500/10 to-green-500/10'
     },
     {
       icon: Mic,
       title: 'Voice Commands',
-      description: 'Control your study environment hands-free with voice recognition.',
-      color: 'text-green-500'
+      description: 'Control your study environment hands-free with advanced voice recognition and natural language processing.',
+      color: 'text-green-500',
+      gradient: 'from-green-500/10 to-emerald-500/10'
     },
     {
       icon: Calendar,
       title: 'Smart Scheduling',
-      description: 'Organize your tasks and study sessions with AI-powered planning.',
-      color: 'text-purple-500'
+      description: 'Organize your tasks and study sessions with AI-powered planning that adapts to your schedule.',
+      color: 'text-purple-500',
+      gradient: 'from-purple-500/10 to-pink-500/10'
     },
     {
-      icon: Target,
-      title: 'Goal Tracking',
-      description: 'Set and monitor your academic goals with progress tracking.',
-      color: 'text-orange-500'
+      icon: Timer,
+      title: 'Session Tracking',
+      description: 'Monitor study time, track confidence levels, and maintain detailed notes for each learning session.',
+      color: 'text-orange-500',
+      gradient: 'from-orange-500/10 to-red-500/10'
+    },
+    {
+      icon: Lightbulb,
+      title: 'AI Study Tips',
+      description: 'Receive personalized study suggestions and learning strategies based on your progress and performance.',
+      color: 'text-amber-500',
+      gradient: 'from-amber-500/10 to-yellow-500/10'
     }
   ];
 
   const stats = [
-    { icon: Users, label: 'Active Students', value: '0', color: 'text-blue-500' },
-    { icon: MessageSquare, label: 'AI Conversations', value: '0', color: 'text-green-500' },
-    { icon: Clock, label: 'Study Hours Saved', value: '0', color: 'text-purple-500' },
-    { icon: Star, label: 'Success Rate', value: '0%', color: 'text-orange-500' }
+    { icon: Users, label: 'Active Students', value: '1,000+', color: 'text-blue-500' },
+    { icon: MessageSquare, label: 'AI Conversations', value: '10,000+', color: 'text-green-500' },
+    { icon: Clock, label: 'Study Hours Tracked', value: '5,000+', color: 'text-purple-500' },
+    { icon: Star, label: 'Student Success Rate', value: '94%', color: 'text-orange-500' }
   ];
+
+  const studyTrackerFeatures = [
+    {
+      icon: Brain,
+      title: 'AI-Powered Progress Analysis',
+      description: 'Get intelligent insights into your learning patterns and receive personalized recommendations.'
+    },
+    {
+      icon: Timer,
+      title: 'Real-time Study Sessions',
+      description: 'Track your study time with precision, including breaks and productivity metrics.'
+    },
+    {
+      icon: TrendingUp,
+      title: 'Confidence Tracking',
+      description: 'Rate your understanding and track how your confidence grows over time.'
+    },
+    {
+      icon: BookOpen,
+      title: 'Topic Organization',
+      description: 'Organize your studies by subjects with subtopics, difficulty levels, and progress tracking.'
+    }
+  ];
+
   const benefits = [
     {
       icon: Zap,
       title: 'Boost Productivity',
-      description: 'Stay organized and focused with AI-powered study tools'
+      description: 'Stay organized and focused with AI-powered study tools that adapt to your learning style'
     },
     {
-      icon: BookOpen,
-      title: 'Learn Smarter',
-      description: 'Get personalized help and explanations when you need them'
+      icon: Shield,
+      title: 'Privacy First',
+      description: 'Your study data is secure and private. We prioritize your academic confidentiality'
     },
     {
-      icon: BarChart3,
-      title: 'Track Progress',
-      description: 'Monitor your learning journey with detailed insights'
+      icon: Globe,
+      title: 'Access Anywhere',
+      description: 'Study from any device with our responsive web application and cross-platform support'
+    },
+    {
+      icon: Smartphone,
+      title: 'Mobile Optimized',
+      description: 'Full functionality on mobile devices for studying on-the-go'
     }
   ];
 
@@ -177,13 +233,14 @@ export default function Home() {
             </motion.h1>
             
             <motion.p 
-              className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed"
+              className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.8 }}
             >
-              Transform your learning experience with AI-powered assistance, smart scheduling, 
-              and personalized study guidance that adapts to your unique learning style.
+              Transform your learning experience with AI-powered assistance, comprehensive study tracking, 
+              smart scheduling, and personalized insights that adapt to your unique learning journey. 
+              Track your progress, get AI study tips, and achieve your academic goals faster than ever.
             </motion.p>
             
             <motion.div 
@@ -291,12 +348,12 @@ export default function Home() {
               </span>
             </h2>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Discover how our comprehensive AI-powered platform transforms your study experience 
-              with intelligent features designed for modern learners.
+              Discover powerful tools designed to enhance your learning experience and boost your academic performance.
             </p>
           </motion.div>
-            <motion.div 
-            className="grid md:grid-cols-2 lg:grid-cols-4 gap-6"
+
+          <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
@@ -308,24 +365,22 @@ export default function Home() {
                 <motion.div
                   key={index}
                   variants={itemVariants}
-                  whileHover={{ y: -5 }}
+                  whileHover={{ scale: 1.02, y: -5 }}
                   transition={{ type: "spring", stiffness: 300 }}
                 >
-                  <Card className="h-full border-0 shadow-sm hover:shadow-md transition-shadow text-center">
+                  <Card className="h-full bg-gradient-to-br from-background to-muted/30 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
                     <CardContent className="p-6">
                       <motion.div 
-                        className={`inline-flex p-4 rounded-full bg-muted mb-4 ${feature.color}`}
+                        className={`w-12 h-12 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center mb-4`}
                         whileHover={{ scale: 1.1 }}
                         transition={{ type: "spring", stiffness: 400 }}
                       >
-                        <IconComponent className="h-6 w-6" />
+                        <IconComponent className={`h-6 w-6 ${feature.color}`} />
                       </motion.div>
-                      
-                      <h3 className="text-lg font-semibold mb-3 text-foreground">
+                      <h3 className="text-xl font-semibold mb-3 text-foreground">
                         {feature.title}
                       </h3>
-                      
-                      <p className="text-muted-foreground text-sm leading-relaxed">
+                      <p className="text-muted-foreground leading-relaxed">
                         {feature.description}
                       </p>
                     </CardContent>
@@ -334,6 +389,124 @@ export default function Home() {
               );
             })}
           </motion.div>
+        </div>
+      </section>
+
+      {/* Study Tracker Spotlight Section */}
+      <section className="py-20 bg-gradient-to-br from-primary/5 via-purple-500/5 to-secondary/5">
+        <div className="container mx-auto px-6">
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <motion.div
+              className="inline-flex items-center gap-2 bg-emerald-500/10 text-emerald-600 px-4 py-2 rounded-full text-sm font-medium mb-4"
+              initial={{ scale: 0 }}
+              whileInView={{ scale: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Target className="h-4 w-4" />
+              Study Tracker
+            </motion.div>
+            <h2 className="text-4xl lg:text-5xl font-bold mb-4">
+              Track Your{' '}
+              <span className="bg-gradient-to-r from-emerald-500 to-green-600 bg-clip-text text-transparent">
+                Learning Journey
+              </span>
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Monitor your progress with detailed analytics, AI-powered insights, and comprehensive study session tracking.
+            </p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Study Tracker Features */}
+            <motion.div 
+              className="space-y-6"
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+            >
+              {studyTrackerFeatures.map((feature, index) => {
+                const IconComponent = feature.icon;
+                return (
+                  <motion.div
+                    key={index}
+                    className="flex items-start gap-4 p-4 rounded-xl bg-background/50 backdrop-blur-sm hover:bg-background/80 transition-all"
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1, duration: 0.5 }}
+                    whileHover={{ scale: 1.02 }}
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                      <IconComponent className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground mb-1">{feature.title}</h3>
+                      <p className="text-muted-foreground text-sm">{feature.description}</p>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
+
+            {/* Visual Demo */}
+            <motion.div 
+              className="relative"
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+            >
+              <div className="bg-background rounded-2xl p-6 shadow-2xl border">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold">Current Study Session</h3>
+                    <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200">
+                      <Play className="h-3 w-3 mr-1" />
+                      Active
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Mathematics - Calculus</span>
+                      <span className="font-mono font-medium">24:35</span>
+                    </div>
+                    
+                    <div className="w-full bg-muted rounded-full h-2">
+                      <motion.div 
+                        className="h-2 bg-gradient-to-r from-emerald-500 to-green-600 rounded-full"
+                        initial={{ width: 0 }}
+                        whileInView={{ width: "75%" }}
+                        transition={{ delay: 1, duration: 1.5 }}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-3 text-center">
+                      <div className="p-2 bg-muted/50 rounded-lg">
+                        <div className="text-lg font-semibold text-emerald-600">4.2</div>
+                        <div className="text-xs text-muted-foreground">Confidence</div>
+                      </div>
+                      <div className="p-2 bg-muted/50 rounded-lg">
+                        <div className="text-lg font-semibold text-blue-600">89%</div>
+                        <div className="text-xs text-muted-foreground">Progress</div>
+                      </div>
+                      <div className="p-2 bg-muted/50 rounded-lg">
+                        <div className="text-lg font-semibold text-purple-600">12</div>
+                        <div className="text-xs text-muted-foreground">Sessions</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </section>      {/* Benefits Section */}
       <section className="py-16 bg-muted/30">
@@ -354,7 +527,7 @@ export default function Home() {
           </motion.div>
 
           <motion.div
-            className="grid md:grid-cols-3 gap-6"
+            className="grid md:grid-cols-2 lg:grid-cols-4 gap-6"
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"

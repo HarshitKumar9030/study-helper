@@ -7,9 +7,10 @@ import { StudyTopic } from '@/lib/models/study-tracker';
 // GET /api/study-tracker/topics/[id] - Get a specific topic
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {
@@ -19,7 +20,7 @@ export async function GET(
     await connectMongo();
 
     const topic = await StudyTopic.findOne({
-      _id: params.id,
+      _id: id,
       userId: session.user.email
     });
 
@@ -40,9 +41,10 @@ export async function GET(
 // PUT /api/study-tracker/topics/[id] - Update a topic
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {
@@ -54,7 +56,7 @@ export async function PUT(
     await connectMongo();
 
     const updatedTopic = await StudyTopic.findOneAndUpdate(
-      { _id: params.id, userId: session.user.email },
+      { _id: id, userId: session.user.email },
       { 
         ...body, 
         updatedAt: new Date() 
@@ -79,9 +81,10 @@ export async function PUT(
 // DELETE /api/study-tracker/topics/[id] - Delete a topic
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {
@@ -91,7 +94,7 @@ export async function DELETE(
     await connectMongo();
 
     const deletedTopic = await StudyTopic.findOneAndDelete({
-      _id: params.id,
+      _id: id,
       userId: session.user.email
     });
 
@@ -138,9 +141,9 @@ export async function PATCH(
 
     // Update progress for each subtopic
     if (progressUpdates && Array.isArray(progressUpdates)) {
-      progressUpdates.forEach(update => {
+      progressUpdates.forEach((update: any) => {
         const progressIndex = topic.progress.findIndex(
-          p => p.subtopic === update.subtopic
+          (p: any) => p.subtopic === update.subtopic
         );
         
         if (progressIndex !== -1) {

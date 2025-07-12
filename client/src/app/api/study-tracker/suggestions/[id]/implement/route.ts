@@ -7,9 +7,10 @@ import { StudyTopic } from '@/lib/models/study-tracker';
 // PATCH /api/study-tracker/suggestions/[id]/implement - Mark suggestion as implemented
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.email) {
@@ -21,7 +22,7 @@ export async function PATCH(
     // Find the topic that contains this suggestion
     const topic = await StudyTopic.findOne({
       userId: session.user.email,
-      'aiSuggestions._id': params.id
+      'aiSuggestions._id': id
     });
 
     if (!topic) {
@@ -32,7 +33,7 @@ export async function PATCH(
     const updatedTopic = await StudyTopic.findOneAndUpdate(
       { 
         userId: session.user.email,
-        'aiSuggestions._id': params.id 
+        'aiSuggestions._id': id 
       },
       { 
         $set: { 'aiSuggestions.$.isImplemented': true },

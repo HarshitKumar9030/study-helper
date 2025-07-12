@@ -22,7 +22,9 @@ import {
   Lightbulb,
   Star,
   MessageSquare,
-  X
+  X,
+  RefreshCw,
+  Sparkles
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,8 +32,10 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { IStudyTopic, IStudyProgress } from '@/lib/models/study-tracker';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface StudyFlowChartProps {
   topics: IStudyTopic[];
@@ -49,6 +53,7 @@ interface StudySessionDialogProps {
 }
 
 function StudySessionDialog({ subtopic, topic, isOpen, onClose, onUpdate }: StudySessionDialogProps) {
+  const { toast } = useToast();
   const [isStudying, setIsStudying] = useState(false);
   const [studyStartTime, setStudyStartTime] = useState<Date | null>(null);
   const [currentSessionTime, setCurrentSessionTime] = useState(0);
@@ -111,11 +116,33 @@ function StudySessionDialog({ subtopic, topic, isOpen, onClose, onUpdate }: Stud
     
     setIsLoadingSuggestions(true);
     try {
+      // First try to get AI suggestions from the dedicated endpoint
+      const topicResponse = await fetch(`/api/study-tracker/topics/${topic._id}/generate-suggestions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (topicResponse.ok) {
+        const suggestions = await topicResponse.json();
+        if (suggestions && suggestions.length > 0) {
+          const tipSuggestions = suggestions
+            .filter((s: any) => s.type === 'tip' || s.type === 'practice')
+            .slice(0, 3)
+            .map((s: any) => s.content);
+          
+          if (tipSuggestions.length > 0) {
+            setAiSuggestions(tipSuggestions);
+            return;
+          }
+        }
+      }
+      
+      // Fallback to general AI chat
       const response = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: `Give me 3 specific study tips for learning "${subtopic.subtopic}" in the context of "${topic.title}" (${topic.subject}). Focus on practical, actionable advice.`,
+          message: `Give me 3 specific, actionable study tips for learning "${subtopic.subtopic}" in the context of "${topic.title}" (${topic.subject}). Each tip should be practical and specific to this topic. Format as bullet points.`,
           context: `Study session for ${subtopic.subtopic} in ${topic.title} (${topic.subject})`
         })
       });
@@ -136,23 +163,36 @@ function StudySessionDialog({ subtopic, topic, isOpen, onClose, onUpdate }: Stud
           messageContent = JSON.stringify(data);
         }
         
+        // Better parsing of suggestions
         const suggestions = messageContent
-          .split('\n')
-          .filter((line: string) => line.trim().length > 0)
+          .split(/[•\-*]\s+|^\d+[\.\)]\s*/gm)
+          .filter((line: string) => line.trim().length > 20)
+          .map((line: string) => line.trim())
           .slice(0, 3);
-        setAiSuggestions(suggestions);
+          
+        if (suggestions.length > 0) {
+          setAiSuggestions(suggestions);
+        } else {
+          // If parsing fails, use the whole response split by sentences
+          const sentenceSuggestions = messageContent
+            .split(/[.!?]+/)
+            .filter((sentence: string) => sentence.trim().length > 20)
+            .slice(0, 3)
+            .map((sentence: string) => sentence.trim() + '.');
+          setAiSuggestions(sentenceSuggestions);
+        }
       }
     } catch (error) {
       console.error('Error fetching AI suggestions:', error);
       setAiSuggestions([
-        "Break down this topic into smaller, manageable concepts",
-        "Practice with examples and real-world applications", 
-        "Review regularly and test your understanding"
+        `Focus on understanding the core concepts of ${subtopic.subtopic} before moving to advanced topics.`,
+        `Create practice problems or find exercises specifically related to ${subtopic.subtopic} to reinforce your learning.`,
+        `Explain ${subtopic.subtopic} to someone else or write a summary to test your understanding.`
       ]);
     } finally {
       setIsLoadingSuggestions(false);
     }
-  }, [subtopic.subtopic, topic.title, topic.subject, isLoadingSuggestions]);
+  }, [subtopic.subtopic, topic.title, topic.subject, topic._id, isLoadingSuggestions]);
 
   // Load AI suggestions on mount if not already available
   useEffect(() => {
@@ -198,15 +238,68 @@ function StudySessionDialog({ subtopic, topic, isOpen, onClose, onUpdate }: Stud
       });
 
       if (response.ok) {
+        toast({
+          title: "Study Session Saved!",
+          description: `Session completed for "${subtopic.subtopic}". Time: ${formatTime(timeSpentSeconds)}`,
+        });
         onUpdate();
         onClose();
         // Reset notes after successful save
         setNotes('');
       } else {
         console.error('Failed to save study session');
+        toast({
+          title: "Error",
+          description: "Failed to save study session. Please try again.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error updating study session:', error);
+    }
+  };
+
+  const handleMarkCompleted = async () => {
+    try {
+      const response = await fetch(`/api/study-tracker/topics/${topic._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          progressUpdates: [{
+            subtopic: subtopic.subtopic,
+            timeSpent: subtopic.timeSpent || 0,
+            confidence: Math.max(confidence, 4), // Ensure confidence is at least 4 for completed
+            status: 'completed',
+            lastStudied: new Date(),
+            notes: notes.trim() ? [...(subtopic.notes || []), { text: notes.trim(), timestamp: new Date() }] : subtopic.notes
+          }]
+        })
+      });
+
+      if (response.ok) {
+        toast({
+          title: "🎉 Topic Completed!",
+          description: `You've successfully completed "${subtopic.subtopic}". Great work!`,
+        });
+        onUpdate();
+        onClose();
+        // Reset notes after successful save
+        setNotes('');
+      } else {
+        console.error('Failed to mark as completed');
+        toast({
+          title: "Error",
+          description: "Failed to mark topic as completed. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error marking as completed:', error);
+      toast({
+        title: "Error",
+        description: "An error occurred while marking the topic as completed.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -253,7 +346,7 @@ function StudySessionDialog({ subtopic, topic, isOpen, onClose, onUpdate }: Stud
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
+    const secs = Math.floor(seconds % 60);
     
     if (hours > 0) {
       return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
@@ -329,17 +422,43 @@ function StudySessionDialog({ subtopic, topic, isOpen, onClose, onUpdate }: Stud
                   </div>
 
                   {/* Controls */}
-                  <div className="flex justify-center mb-8">
-                    {!isStudying ? (
-                      <Button onClick={handleStartStudy} size="lg" className="gap-3 px-8 py-4 text-lg">
-                        <Play className="w-5 h-5" />
-                        Start Study Session
-                      </Button>
-                    ) : (
-                      <Button onClick={handleStopStudy} variant="outline" size="lg" className="gap-3 px-8 py-4 text-lg">
-                        <Pause className="w-5 h-5" />
-                        End Session & Save
-                      </Button>
+                  <div className="flex flex-col gap-3 mb-8">
+                    <div className="flex justify-center">
+                      {!isStudying ? (
+                        <Button onClick={handleStartStudy} size="lg" className="gap-3 px-8 py-4 text-lg">
+                          <Play className="w-5 h-5" />
+                          Start Study Session
+                        </Button>
+                      ) : (
+                        <Button onClick={handleStopStudy} variant="outline" size="lg" className="gap-3 px-8 py-4 text-lg">
+                          <Pause className="w-5 h-5" />
+                          End Session & Save
+                        </Button>
+                      )}
+                    </div>
+                    
+                    {/* Mark as Completed Button */}
+                    {subtopic.status !== 'completed' && (
+                      <div className="flex justify-center">
+                        <Button 
+                          onClick={handleMarkCompleted}
+                          variant="outline"
+                          size="sm"
+                          className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-400 dark:hover:bg-emerald-950"
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                          Mark as Completed
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {subtopic.status === 'completed' && (
+                      <div className="flex justify-center">
+                        <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-sm font-medium">
+                          <CheckCircle2 className="w-4 h-4" />
+                          Already Completed
+                        </div>
+                      </div>
                     )}
                   </div>
 
@@ -347,6 +466,11 @@ function StudySessionDialog({ subtopic, topic, isOpen, onClose, onUpdate }: Stud
                   <div className="mb-8">
                     <label className="text-lg font-medium text-stone-700 dark:text-stone-300 mb-4 block">
                       How confident do you feel about this topic?
+                      {subtopic.status === 'completed' && (
+                        <span className="ml-2 text-sm text-emerald-600 dark:text-emerald-400 font-normal">
+                          ✓ Completed
+                        </span>
+                      )}
                     </label>
                     <div className="flex gap-3 justify-center">
                       {[1, 2, 3, 4, 5].map(level => (
@@ -356,7 +480,9 @@ function StudySessionDialog({ subtopic, topic, isOpen, onClose, onUpdate }: Stud
                           className={cn(
                             "w-12 h-12 rounded-full text-lg font-semibold transition-all",
                             level <= confidence
-                              ? "bg-indigo-500 text-white ring-2 ring-indigo-200 dark:ring-indigo-800"
+                              ? subtopic.status === 'completed'
+                                ? "bg-emerald-500 text-white ring-2 ring-emerald-200 dark:ring-emerald-800"
+                                : "bg-indigo-500 text-white ring-2 ring-indigo-200 dark:ring-indigo-800"
                               : "bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-400 hover:bg-stone-300 dark:hover:bg-stone-600"
                           )}
                         >
@@ -368,41 +494,83 @@ function StudySessionDialog({ subtopic, topic, isOpen, onClose, onUpdate }: Stud
                       <span>Not confident</span>
                       <span>Very confident</span>
                     </div>
+                    {confidence >= 4 && subtopic.status !== 'completed' && (
+                      <div className="text-center mt-3">
+                        <p className="text-xs text-amber-600 dark:text-amber-400">
+                          💡 High confidence! Consider marking this topic as completed.
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Notes */}
-                  <div className="flex-1">
+                  <div className="flex-1 flex flex-col">
                     <label className="text-lg font-medium text-stone-700 dark:text-stone-300 mb-4 block">
                       Session Notes
                     </label>
                     
-                    {/* Previous notes display */}
+                    {/* Previous notes display with scroll */}
                     {subtopic.notes && subtopic.notes.length > 0 && (
-                      <div className="mb-4 max-h-24 overflow-y-auto bg-stone-50 dark:bg-stone-800 rounded-lg p-3 border border-stone-200 dark:border-stone-700">
-                        <div className="text-xs text-stone-500 mb-2">Previous notes:</div>
-                        {subtopic.notes.slice(-2).map((note, index) => (
-                          <div key={index} className="text-sm text-stone-600 dark:text-stone-400 mb-1">
-                            <span className="text-xs text-stone-500">
-                              {new Date(note.timestamp).toLocaleDateString()} - 
-                            </span>
-                            {" " + note.text}
+                      <div className="mb-4 bg-stone-50 dark:bg-stone-800 rounded-lg border border-stone-200 dark:border-stone-700">
+                        <div className="text-xs text-stone-500 p-3 pb-2 flex items-center gap-2 border-b border-stone-200 dark:border-stone-700">
+                          <MessageSquare className="w-3 h-3" />
+                          Previous notes ({subtopic.notes.length}):
+                        </div>
+                        <ScrollArea className="h-40">
+                          <div className="p-3 space-y-3">
+                            {subtopic.notes.map((note, index) => (
+                              <div key={index} className="text-sm text-stone-600 dark:text-stone-400 border-l-2 border-stone-300 dark:border-stone-600 pl-3 py-2 bg-white dark:bg-stone-900 rounded-r-md">
+                                <div className="text-xs text-stone-500 mb-1 font-medium">
+                                  {new Date(note.timestamp).toLocaleDateString()} at {new Date(note.timestamp).toLocaleTimeString()}
+                                </div>
+                                <div className="text-sm leading-relaxed">{note.text}</div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
+                        </ScrollArea>
                       </div>
                     )}
                     
-                    <Textarea
-                      value={notes}
-                      onChange={(e) => {
-                        if (e.target.value.length <= 500) {
-                          setNotes(e.target.value);
-                        }
-                      }}
-                      placeholder="What did you learn? Key insights, questions, or reflections..."
-                      className="w-full h-32 resize-none"
-                    />
-                    <div className="text-xs text-stone-500 mt-2">
-                      {notes.length}/500 characters
+                    <div className="space-y-3 flex-1 flex flex-col">
+                      <Textarea
+                        value={notes}
+                        onChange={(e) => {
+                          if (e.target.value.length <= 500) {
+                            setNotes(e.target.value);
+                          }
+                        }}
+                        placeholder="💡 What did you learn today?
+                        
+Key insights, breakthrough moments, questions that came up, or anything that helped you understand the topic better...
+
+Examples:
+• I finally understood how X connects to Y
+• Still confused about Z - need to review
+• Found a great way to remember this concept
+• This example really helped clarify the concept"
+                        className="w-full h-32 resize-none text-sm flex-1"
+                      />
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-3 text-xs text-stone-500">
+                          <span>{notes.length}/500 characters</span>
+                          {notes.length > 0 && (
+                            <span className="text-green-600 dark:text-green-400">
+                              • Notes will be saved when you end the session
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={() => setNotes('')}
+                            variant="ghost"
+                            size="sm"
+                            disabled={!notes.trim()}
+                            className="text-xs h-7 px-2"
+                          >
+                            Clear
+                          </Button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -413,10 +581,15 @@ function StudySessionDialog({ subtopic, topic, isOpen, onClose, onUpdate }: Stud
                   <div className="mb-8">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
-                        <Lightbulb className="w-5 h-5 text-amber-500" />
-                        <h3 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
-                          AI Study Tips
-                        </h3>
+                        <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                          <Lightbulb className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-stone-900 dark:text-stone-100">
+                            AI Study Tips
+                          </h3>
+                          <p className="text-xs text-stone-500">Personalized suggestions for this topic</p>
+                        </div>
                       </div>
                       {aiSuggestions.length > 0 && (
                         <Button
@@ -424,8 +597,9 @@ function StudySessionDialog({ subtopic, topic, isOpen, onClose, onUpdate }: Stud
                           variant="ghost"
                           size="sm"
                           disabled={isLoadingSuggestions}
-                          className="text-xs"
+                          className="text-xs gap-1"
                         >
+                          <RefreshCw className={cn("w-3 h-3", isLoadingSuggestions && "animate-spin")} />
                           Refresh
                         </Button>
                       )}
@@ -443,21 +617,24 @@ function StudySessionDialog({ subtopic, topic, isOpen, onClose, onUpdate }: Stud
                     ) : (
                       <div className="space-y-3">
                         {aiSuggestions.map((suggestion, index) => (
-                          <div key={index} className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                          <div key={index} className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 hover:shadow-sm transition-shadow">
                             <div className="flex items-start gap-3">
-                              <Star className="w-4 h-4 text-amber-500 mt-1 flex-shrink-0" />
-                              <p className="text-stone-700 dark:text-stone-300 text-sm leading-relaxed">
+                              <div className="flex-shrink-0 w-6 h-6 bg-amber-500 text-white rounded-full flex items-center justify-center text-xs font-semibold mt-1">
+                                {index + 1}
+                              </div>
+                              <p className="text-stone-700 dark:text-stone-300 text-sm leading-relaxed flex-1">
                                 {suggestion}
                               </p>
                             </div>
                           </div>
                         ))}
                         {aiSuggestions.length === 0 && !isLoadingSuggestions && (
-                          <div className="text-center py-4">
+                          <div className="text-center py-6 bg-stone-50 dark:bg-stone-800 rounded-lg border-2 border-dashed border-stone-300 dark:border-stone-600">
+                            <Lightbulb className="w-8 h-8 text-stone-400 mx-auto mb-3" />
                             <p className="text-stone-500 text-sm mb-3">Get personalized study tips for this topic</p>
-                            <Button onClick={fetchAISuggestions} variant="outline" className="w-full" size="lg">
-                              <Lightbulb className="w-4 h-4 mr-2" />
-                              Get AI Study Tips
+                            <Button onClick={fetchAISuggestions} variant="outline" className="gap-2" size="sm">
+                              <Sparkles className="w-4 h-4" />
+                              Generate AI Tips
                             </Button>
                           </div>
                         )}
@@ -769,7 +946,7 @@ export function StudyFlowChart({ topics, selectedTopic, onTopicSelect, onTopicUp
                                   <div className="flex items-center gap-4 text-xs text-stone-500">
                                     <span className="flex items-center gap-1">
                                       <Timer className="w-3 h-3" />
-                                      {Math.floor((progressItem.timeSpent || 0) / 60)}m {(progressItem.timeSpent || 0) % 60}s
+                                      {Math.floor((progressItem.timeSpent || 0) / 60)}m {Math.floor((progressItem.timeSpent || 0) % 60)}s
                                     </span>
                                     <span className="flex items-center gap-1">
                                       <Brain className="w-3 h-3" />

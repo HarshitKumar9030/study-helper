@@ -234,7 +234,7 @@ export function StudyTopicCard({ topic, onClick, onUpdate }: StudyTopicCardProps
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-400">Time Spent</p>
               <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                {Math.round(totalTimeSpent / 60)}h {totalTimeSpent % 60}m
+                {Math.floor(totalTimeSpent / 60)}h {Math.floor(totalTimeSpent % 60)}m
               </p>
             </div>
             
@@ -309,7 +309,7 @@ export function StudyTopicCard({ topic, onClick, onUpdate }: StudyTopicCardProps
                 size="sm"
               >
                 <Pause className="w-4 h-4" />
-                Stop Studying ({Math.round((new Date().getTime() - (studyStartTime?.getTime() || 0)) / 1000 / 60)}m)
+                Stop Studying ({Math.floor((new Date().getTime() - (studyStartTime?.getTime() || 0)) / 1000 / 60)}m)
               </Button>
             )}
           </div>
